@@ -1,17 +1,17 @@
 package com.crimeLink.anayzer.dto;
 
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class OfficerDutyRowDTO {
-    private Long officerId;
-    private String officerName;
-
-    private Long scheduleId;
-    private LocalDateTime datetime;
-
-    private Integer duration;
-    private String taskType;
-    private String status;
+    private Integer officerId;
+    private String name;
     private String location;
+    private String time;
+    private String status;
     private String description;
 }

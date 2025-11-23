@@ -1,31 +1,87 @@
 package com.crimeLink.anayzer.service;
 
 import com.crimeLink.anayzer.dto.DutyScheduleRequest;
+import com.crimeLink.anayzer.dto.OfficerDutyRowDTO;
 import com.crimeLink.anayzer.entity.DutySchedule;
+import com.crimeLink.anayzer.entity.User;
 import com.crimeLink.anayzer.repository.DutyScheduleRepository;
+import com.crimeLink.anayzer.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
+@RequiredArgsConstructor
 public class DutyScheduleService {
 
-    private final DutyScheduleRepository repo;
+    private final DutyScheduleRepository dutyRepo;
+    private final UserRepository userRepo;
 
-    public DutyScheduleService(DutyScheduleRepository repo) {
-        this.repo = repo;
+    public List<OfficerDutyRowDTO> getOfficerRowsForDate(LocalDate date) {
+
+        List<User> officers = userRepo.findByRoleAndStatus("FieldOfficer", "Active");
+
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.plusDays(1).atStartOfDay();
+
+        List<OfficerDutyRowDTO> rows = new ArrayList<>();
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
+
+        for (User officer : officers) {
+
+            List<DutySchedule> officerDuties =
+                    dutyRepo.findByAssignedOfficer_UserIdAndDatetimeBetween(
+                            officer.getUserId(), start, end
+                    );
+
+            if (officerDuties.isEmpty()) {
+                rows.add(new OfficerDutyRowDTO(
+                        officer.getUserId(),
+                        officer.getName(),
+                        "", "", "", ""
+                ));
+            } else {
+                for (DutySchedule duty : officerDuties) {
+                    rows.add(new OfficerDutyRowDTO(
+                            officer.getUserId(),
+                            officer.getName(),
+                            duty.getLocation(),
+                            duty.getDatetime().format(timeFmt),
+                            duty.getStatus(),
+                            duty.getDescription()
+                    ));
+                }
+            }
+        }
+
+        return rows;
     }
 
-    public DutySchedule saveSchedule(DutyScheduleRequest req) {
+    public DutySchedule saveDuty(DutyScheduleRequest req) {
 
-        DutySchedule d = new DutySchedule();
+        User officer = userRepo.findById(req.getOfficerId())
+                .orElseThrow(() -> new RuntimeException("Officer not found"));
 
-        d.setDatetime(req.getDatetime());
-        d.setDuration(req.getDuration());
-        d.setTaskType(req.getTaskType());
-        d.setStatus(req.getStatus());
-        d.setAssignedOfficer(req.getAssignedOfficer());
-        d.setLocation(req.getLocation());
-        d.setDescription(req.getDescription());
+        DutySchedule duty = new DutySchedule();
+        duty.setAssignedOfficer(officer);
+        duty.setDatetime(req.getDatetime());
+        duty.setDuration(req.getDuration());
+        duty.setTaskType(req.getTaskType());
+        duty.setStatus(req.getStatus());
+        duty.setLocation(req.getLocation());
+        duty.setDescription(req.getDescription());
 
-        return repo.save(d);
+        return dutyRepo.save(duty);
+    }
+
+    public List<DutySchedule> getDutiesBetween(LocalDate start, LocalDate end) {
+        return dutyRepo.findByDatetimeBetween(
+                start.atStartOfDay(),
+                end.plusDays(1).atStartOfDay()
+        );
     }
 }
