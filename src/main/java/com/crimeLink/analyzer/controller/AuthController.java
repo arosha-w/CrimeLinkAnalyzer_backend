@@ -31,7 +31,7 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(
             @RequestBody LoginRequest request,
             HttpServletRequest httpRequest) {
-        LoginResponse response = authService.login(request, httpRequest);
+            LoginResponse response = authService.login(request, httpRequest);
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);
