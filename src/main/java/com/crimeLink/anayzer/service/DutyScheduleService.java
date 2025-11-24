@@ -83,6 +83,7 @@ public class DutyScheduleService {
         duty.setStatus(req.getStatus() != null ? req.getStatus() : "Active");
         duty.setLocation(req.getLocation());
         duty.setDescription(req.getDescription());
+        duty.setTimeRange(req.getTimeRange());
 
         return dutyRepo.save(duty);
     }
