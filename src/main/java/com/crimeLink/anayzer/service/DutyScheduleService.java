@@ -25,18 +25,17 @@ public class DutyScheduleService {
 
         List<User> officers = userRepo.findByRoleAndStatus("FieldOfficer", "Active");
 
-        LocalDateTime start = date.atStartOfDay();
-        LocalDateTime end = date.plusDays(1).atStartOfDay();
+        List<DutySchedule> dutiesForDate =
+                dutyRepo.findByDate(date); // NEW CALL
 
         List<OfficerDutyRowDTO> rows = new ArrayList<>();
-        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
 
         for (User officer : officers) {
 
             List<DutySchedule> officerDuties =
-                    dutyRepo.findByAssignedOfficer_UserIdAndDatetimeBetween(
-                            officer.getUserId(), start, end
-                    );
+                    dutiesForDate.stream()
+                            .filter(d -> d.getAssignedOfficer().getUserId().equals(officer.getUserId()))
+                            .toList();
 
             if (officerDuties.isEmpty()) {
                 rows.add(new OfficerDutyRowDTO(
@@ -50,7 +49,7 @@ public class DutyScheduleService {
                             officer.getUserId(),
                             officer.getName(),
                             duty.getLocation(),
-                            duty.getDatetime().format(timeFmt),
+                            duty.getTimeRange(),
                             duty.getStatus(),
                             duty.getDescription()
                     ));
@@ -63,25 +62,33 @@ public class DutyScheduleService {
 
     public DutySchedule saveDuty(DutyScheduleRequest req) {
 
+        if (req.getOfficerId() == null) {
+            throw new IllegalArgumentException("OfficerId is required");
+        }
+        if (req.getDate() == null) {
+            throw new IllegalArgumentException("Date is required");
+        }
+
         User officer = userRepo.findById(req.getOfficerId())
                 .orElseThrow(() -> new RuntimeException("Officer not found"));
 
         DutySchedule duty = new DutySchedule();
         duty.setAssignedOfficer(officer);
-        duty.setDatetime(req.getDatetime());
-        duty.setDuration(req.getDuration());
-        duty.setTaskType(req.getTaskType());
-        duty.setStatus(req.getStatus());
+
+        // ✅ SET DATE
+        duty.setDate(req.getDate());
+
+        //duty.setDuration(req.getDuration() != null ? req.getDuration() : 240);
+        //duty.setTaskType(req.getTaskType() != null ? req.getTaskType() : "General");
+        duty.setStatus(req.getStatus() != null ? req.getStatus() : "Active");
         duty.setLocation(req.getLocation());
         duty.setDescription(req.getDescription());
 
         return dutyRepo.save(duty);
     }
 
+
     public List<DutySchedule> getDutiesBetween(LocalDate start, LocalDate end) {
-        return dutyRepo.findByDatetimeBetween(
-                start.atStartOfDay(),
-                end.plusDays(1).atStartOfDay()
-        );
+        return dutyRepo.findByDateBetween(start, end);
     }
 }

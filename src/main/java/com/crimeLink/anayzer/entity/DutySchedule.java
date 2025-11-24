@@ -1,7 +1,7 @@
 package com.crimeLink.anayzer.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "duty_schedule")
@@ -12,14 +12,11 @@ public class DutySchedule {
     @Column(name = "schedule_id")
     private Long scheduleId;
 
-    @Column(name = "datetime", nullable = false)
-    private LocalDateTime datetime;
+    @Column(name = "date", nullable = false)
+    private LocalDate date;
 
-    @Column(name = "duration")
-    private Integer duration; // minutes or hours (your choice)
-
-    @Column(name = "task_type")
-    private String taskType;
+    @Column(name = "time_range")
+    private String timeRange;   // "06:00-21:00"
 
     @Column(name = "status")
     private String status;
@@ -44,28 +41,20 @@ public class DutySchedule {
         this.scheduleId = scheduleId;
     }
 
-    public LocalDateTime getDatetime() {
-        return datetime;
+    public LocalDate getDate() {
+        return date;
     }
 
-    public void setDatetime(LocalDateTime datetime) {
-        this.datetime = datetime;
+    public void setDate(LocalDate date) {
+        this.date = date;
     }
 
-    public Integer getDuration() {
-        return duration;
+    public String getTimeRange() {
+        return timeRange;
     }
 
-    public void setDuration(Integer duration) {
-        this.duration = duration;
-    }
-
-    public String getTaskType() {
-        return taskType;
-    }
-
-    public void setTaskType(String taskType) {
-        this.taskType = taskType;
+    public void setTimeRange(String timeRange) {
+        this.timeRange = timeRange;
     }
 
     public String getStatus() {
