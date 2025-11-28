@@ -36,6 +36,7 @@ public class SecurityConfig {
                         // Public endpoints - no authentication required
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
+                        .requestMatchers("/api/admin/health").permitAll()
                         .requestMatchers("/api/test").permitAll()
                         .requestMatchers("/api/database/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
