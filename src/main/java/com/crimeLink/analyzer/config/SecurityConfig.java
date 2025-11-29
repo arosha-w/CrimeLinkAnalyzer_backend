@@ -33,16 +33,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - no authentication required
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
-                        .requestMatchers("/api/admin/health").permitAll()
-                        .requestMatchers("/api/test").permitAll()
                         .requestMatchers("/api/database/**").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        // Role-based endpoints
-                        .requestMatchers("/api/admin/**").hasRole("Admin")
-                        // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

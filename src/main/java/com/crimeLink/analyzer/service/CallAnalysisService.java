@@ -1,6 +1,6 @@
-package com.crimeLink.anayzer.service;
+package com.crimeLink.analyzer.service;
 
-import com.crimeLink.anayzer.dto.CallAnalysisResultDTO;
+import com.crimeLink.analyzer.dto.CallAnalysisResultDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;

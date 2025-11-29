@@ -1,6 +1,6 @@
-package com.crimeLink.anayzer.repository;
+package com.crimeLink.analyzer.repository;
 
-import com.crimeLink.anayzer.entity.Criminal;
+import com.crimeLink.analyzer.entity.Criminal;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

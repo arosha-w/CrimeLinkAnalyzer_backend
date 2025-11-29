@@ -1,6 +1,6 @@
-package com.crimeLink.anayzer.repository;
+package com.crimeLink.analyzer.repository;
 
-import com.crimeLink.anayzer.entity.CallAnalysisRecord;
+import com.crimeLink.analyzer.entity.CallAnalysisRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

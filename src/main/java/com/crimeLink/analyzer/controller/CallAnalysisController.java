@@ -1,7 +1,7 @@
-package com.crimeLink.anayzer.controller;
+package com.crimeLink.analyzer.controller;
 
-import com.crimeLink.anayzer.dto.CallAnalysisResultDTO;
-import com.crimeLink.anayzer.service.CallAnalysisService;
+import com.crimeLink.analyzer.dto.CallAnalysisResultDTO;
+import com.crimeLink.analyzer.service.CallAnalysisService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

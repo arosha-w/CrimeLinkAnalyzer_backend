@@ -1,4 +1,4 @@
-package com.crimeLink.anayzer.entity;
+package com.crimeLink.analyzer.entity;
 
 import jakarta.persistence.*;
 

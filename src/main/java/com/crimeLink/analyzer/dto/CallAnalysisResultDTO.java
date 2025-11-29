@@ -1,4 +1,4 @@
-package com.crimeLink.anayzer.dto;
+package com.crimeLink.analyzer.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
