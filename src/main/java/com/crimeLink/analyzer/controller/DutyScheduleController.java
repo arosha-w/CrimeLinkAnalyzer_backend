@@ -6,6 +6,14 @@ import com.crimeLink.analyzer.entity.DutySchedule;
 import com.crimeLink.analyzer.service.DutyScheduleService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+
+// also needed:
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,8 +29,6 @@ public class DutyScheduleController {
         this.dutyService = dutyService;
     }
 
-    // ✅ 1) Calendar date click -> officers rows auto-load
-    // Example: GET /api/duty-schedules/officers?date=2025-11-25
     @GetMapping("/officers")
     public List<OfficerDutyRowDTO> getOfficersForDate(
             @RequestParam("date")
@@ -32,20 +38,34 @@ public class DutyScheduleController {
         return dutyService.getOfficerRowsForDate(date);
     }
 
-    // ✅ 2) Save duty schedule
     @PostMapping
     public DutySchedule createDuty(@RequestBody DutyScheduleRequest request) {
         return dutyService.saveDuty(request);
     }
 
-    // ✅ 3) Get duties for calendar event range
-    // Example: GET /api/duty-schedules/range?start=2025-11-01&end=2025-11-30
+
     @GetMapping("/range")
     public List<DutySchedule> getDutiesInRange(
             @RequestParam LocalDate start,
             @RequestParam LocalDate end
     ){
         return dutyService.getDutiesBetween(start, end);
+    }
+    @GetMapping(value = "/report/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> getDutyScheduleReportPdf(
+            @RequestParam("start")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam("end")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end
+    ) {
+        byte[] pdfBytes = dutyService.generateDutyScheduleReportPdf(start, end);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        // this makes browser download as a file named duty-schedule-report.pdf
+        headers.setContentDispositionFormData("attachment", "duty-schedule-report.pdf");
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 }
 
