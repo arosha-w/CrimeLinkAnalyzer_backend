@@ -162,4 +162,19 @@ public class DutyScheduleService {
             throw new RuntimeException("Error generating Duty Schedule PDF", e);
         }
     }
+    private OfficerDutyRowDTO toRow(DutySchedule duty) {
+        String officerName = duty.getAssignedOfficer() != null
+                ? duty.getAssignedOfficer().getName()
+                : "";
+
+        return new OfficerDutyRowDTO(
+                duty.getAssignedOfficer() != null ? duty.getAssignedOfficer().getUserId() : null,
+                officerName,
+                duty.getLocation(),
+                duty.getTimeRange(),
+                duty.getStatus(),
+                duty.getDescription()
+        );
+    }
+
 }
