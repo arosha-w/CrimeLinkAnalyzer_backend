@@ -99,10 +99,10 @@ public class DutyRecommendationService {
     private double calcAvailabilityScore(OfficerPerformance perf) {
         if (perf == null || perf.getAvailabilityStatus() == null) return 50.0;
         return switch (perf.getAvailabilityStatus()) {
-            case "Available" -> 100.0;
+            case "Active" -> 100.0;
             case "OnDuty" -> 40.0;
             case "OnLeave" -> 10.0;
-            case "Unavailable" -> 0.0;
+            case "Absent" -> 0.0;
             default -> 50.0;
         };
     }

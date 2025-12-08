@@ -5,6 +5,7 @@ import com.crimeLink.analyzer.dto.OfficerDutyRowDTO;
 import com.crimeLink.analyzer.entity.DutySchedule;
 import com.crimeLink.analyzer.entity.OfficerPerformance;
 import com.crimeLink.analyzer.entity.User;
+import com.crimeLink.analyzer.enums.DutyStatus;
 import com.crimeLink.analyzer.repository.DutyScheduleRepository;
 import com.crimeLink.analyzer.repository.OfficerPerformanceRepository;
 import com.crimeLink.analyzer.repository.UserRepository;
@@ -13,6 +14,7 @@ import com.lowagie.text.DocumentException;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -31,10 +33,9 @@ public class DutyScheduleService {
     private final UserRepository userRepo;
     private final OfficerPerformanceRepository performanceRepo;
 
-    /**
-     * Returns one or more rows per officer for the given date.
-     * If the officer has no duties that day → one empty editable row.
-     */
+    // ----------------------------------------------------------
+    // Load officer rows for a given date (used by frontend table)
+    // ----------------------------------------------------------
     public List<OfficerDutyRowDTO> getOfficerRowsForDate(LocalDate date) {
 
         // 1) All ACTIVE field officers
@@ -60,18 +61,22 @@ public class DutyScheduleService {
                         officer.getName(),
                         "",      // location
                         "",      // timeRange
-                        "",      // status
+                        "",      // status (no duty assigned)
                         ""       // description
                 ));
             } else {
                 // one row per duty
                 for (DutySchedule duty : officerDuties) {
+                    String statusString = (duty.getStatus() != null)
+                            ? duty.getStatus().name()  // enum -> "ACTIVE"/"COMPLETED"/"ABSENT"
+                            : "";
+
                     rows.add(new OfficerDutyRowDTO(
                             officer.getUserId(),
                             officer.getName(),
                             duty.getLocation() != null ? duty.getLocation() : "",
                             duty.getTimeRange() != null ? duty.getTimeRange() : "",
-                            duty.getStatus() != null ? duty.getStatus() : "",
+                            statusString,
                             duty.getDescription() != null ? duty.getDescription() : ""
                     ));
                 }
@@ -81,8 +86,14 @@ public class DutyScheduleService {
         return rows;
     }
 
-
-    public DutySchedule saveDuty(DutyScheduleRequest req) {
+    // ----------------------------------------------------------
+    // Create / Update (Upsert) a Duty
+    //
+    // SPECIAL:
+    //  - ABSENT  => can be saved without location/timeRange
+    //  - ACTIVE/COMPLETED => require timeRange and use upsert
+    // ----------------------------------------------------------
+    public DutySchedule createDuty(DutyScheduleRequest req) {
 
         if (req.getOfficerId() == null) {
             throw new IllegalArgumentException("OfficerId is required");
@@ -90,32 +101,90 @@ public class DutyScheduleService {
         if (req.getDate() == null) {
             throw new IllegalArgumentException("Date is required");
         }
+        if (req.getStatus() == null) {
+            throw new IllegalArgumentException("Status is required");
+        }
 
         User officer = userRepo.findById(req.getOfficerId())
                 .orElseThrow(() -> new RuntimeException("Officer not found"));
 
-        DutySchedule duty = new DutySchedule();
-        duty.setAssignedOfficer(officer);
-        duty.setDate(req.getDate());
-        // duty.setDuration(req.getDuration() != null ? req.getDuration() : 240);
-        // duty.setTaskType(req.getTaskType() != null ? req.getTaskType() : "General");
-        duty.setStatus(req.getStatus() != null ? req.getStatus() : "Active");
-        duty.setLocation(req.getLocation());
-        duty.setDescription(req.getDescription());
-        duty.setTimeRange(req.getTimeRange());
+        DutyStatus status = req.getStatus();
+        DutySchedule duty;
+        boolean isNew = false;
+
+        if (status == DutyStatus.Absent) {
+            // 🔹 For ABSENT: allow saving even with no timeRange/location
+            duty = new DutySchedule();
+            duty.setAssignedOfficer(officer);
+            duty.setDate(req.getDate());
+            duty.setStatus(DutyStatus.Absent);
+            duty.setLocation(req.getLocation());         // can be null
+            duty.setTimeRange(req.getTimeRange());      // can be null
+            duty.setDescription(req.getDescription());  // can be null
+            isNew = true; // count as a new record for performance
+        } else {
+            // 🔹 For ACTIVE / COMPLETED: require timeRange and do upsert
+            String tr = req.getTimeRange();
+            if (tr == null || tr.isBlank()) {
+                throw new IllegalArgumentException("Time range is required for non-ABSENT status");
+            }
+
+            // 1) Try to find existing duty for SAME date + officer + timeRange
+            duty = dutyRepo
+                    .findByDateAndAssignedOfficer_UserIdAndTimeRange(
+                            req.getDate(),
+                            officer.getUserId(),
+                            tr
+                    )
+                    .orElse(null);
+
+            if (duty == null) {
+                // 2) No existing record → create new
+                duty = new DutySchedule();
+                duty.setAssignedOfficer(officer);
+                duty.setDate(req.getDate());
+                isNew = true;
+            }
+
+            // 3) Update fields from request
+            duty.setStatus(status);
+            duty.setLocation(req.getLocation());
+            duty.setTimeRange(tr);
+            duty.setDescription(req.getDescription());
+        }
 
         DutySchedule saved = dutyRepo.save(duty);
 
-        // Update performance table
-        updateOfficerPerformanceAfterDuty(officer, saved);
+        // Update performance ONLY for NEW duties (avoid double counting)
+        if (isNew) {
+            updateOfficerPerformanceAfterDuty(officer, saved);
+        }
 
         return saved;
     }
 
-    /**
-     * Update or initialize OfficerPerformance after saving a duty.
-     * FIXED: uses List<OfficerPerformance> to avoid NonUniqueResultException.
-     */
+    // Bulk create/update duties
+    public void createDuties(List<DutyScheduleRequest> requests) {
+        for (DutyScheduleRequest req : requests) {
+            createDuty(req);
+        }
+    }
+
+    // ----------------------------------------------------------
+    // Update only the status of an existing duty
+    // ----------------------------------------------------------
+    @Transactional
+    public void updateDutyStatus(Long id, DutyStatus status) {
+        DutySchedule duty = dutyRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Duty not found"));
+
+        duty.setStatus(status);
+        dutyRepo.save(duty);
+    }
+
+    // ----------------------------------------------------------
+    // Performance table update
+    // ----------------------------------------------------------
     private void updateOfficerPerformanceAfterDuty(User officer, DutySchedule duty) {
 
         // repository must be: List<OfficerPerformance> findByOfficer_UserId(Integer userId);
@@ -130,7 +199,7 @@ public class DutyScheduleService {
                     .officer(officer)
                     .totalDuties(0)
                     .reliabilityScore(60)
-                    .availabilityStatus("Available")
+                    .availabilityStatus("Active")
                     .build();
         } else {
             // use first existing record (if duplicates, DB cleanup can be done later)
@@ -145,16 +214,13 @@ public class DutyScheduleService {
         performanceRepo.save(perf);
     }
 
-    /**
-     * Fetch duties between two dates (inclusive).
-     */
+    // ----------------------------------------------------------
+    // Range queries & PDF
+    // ----------------------------------------------------------
     public List<DutySchedule> getDutiesBetween(LocalDate start, LocalDate end) {
         return dutyRepo.findByDateBetween(start, end);
     }
 
-    /**
-     * Generate a PDF report for all duties between start and end dates.
-     */
     public byte[] generateDutyScheduleReportPdf(LocalDate start, LocalDate end) {
 
         List<DutySchedule> duties = getDutiesBetween(start, end);
@@ -202,9 +268,16 @@ public class DutyScheduleService {
                 }
                 table.addCell(officerName);
 
-                // Other fields
+                // Location
                 table.addCell(duty.getLocation() != null ? duty.getLocation() : "");
-                table.addCell(duty.getStatus() != null ? duty.getStatus() : "");
+
+                // Status (enum -> String)
+                String statusString = duty.getStatus() != null
+                        ? duty.getStatus().name()
+                        : "";
+                table.addCell(statusString);
+
+                // Description
                 table.addCell(duty.getDescription() != null ? duty.getDescription() : "");
             }
 
@@ -218,22 +291,23 @@ public class DutyScheduleService {
         }
     }
 
-    /**
-     * Helper mapping one DutySchedule → OfficerDutyRowDTO
-     * (Not used above yet, but you can reuse it if needed.)
-     */
+    // (Helper) Convert entity to DTO if needed elsewhere
     private OfficerDutyRowDTO toRow(DutySchedule duty) {
 
         User assignedOfficer = duty.getAssignedOfficer();
         Integer officerId = assignedOfficer != null ? assignedOfficer.getUserId() : null;
         String officerName = assignedOfficer != null ? assignedOfficer.getName() : "";
 
+        String statusString = duty.getStatus() != null
+                ? duty.getStatus().name()
+                : "";
+
         return new OfficerDutyRowDTO(
                 officerId,
                 officerName,
                 duty.getLocation(),
                 duty.getTimeRange(),
-                duty.getStatus(),
+                statusString,
                 duty.getDescription()
         );
     }

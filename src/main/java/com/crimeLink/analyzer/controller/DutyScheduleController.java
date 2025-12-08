@@ -5,15 +5,11 @@ import com.crimeLink.analyzer.dto.OfficerDutyRowDTO;
 import com.crimeLink.analyzer.entity.DutySchedule;
 import com.crimeLink.analyzer.service.DutyScheduleService;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-
-// also needed:
-import org.springframework.format.annotation.DateTimeFormat;
-import java.time.LocalDate;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -29,28 +25,59 @@ public class DutyScheduleController {
         this.dutyService = dutyService;
     }
 
+    // ------------------------------------------------------
+    // 1) Get officer rows for a specific date
+    // ------------------------------------------------------
     @GetMapping("/officers")
-    public List<OfficerDutyRowDTO> getOfficersForDate(
+    public ResponseEntity<List<OfficerDutyRowDTO>> getOfficersForDate(
             @RequestParam("date")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate date
     ) {
-        return dutyService.getOfficerRowsForDate(date);
+        List<OfficerDutyRowDTO> rows = dutyService.getOfficerRowsForDate(date);
+        return ResponseEntity.ok(rows); // 200 OK
     }
 
+    // ------------------------------------------------------
+    // 2) Create / Save a duty (upsert via service.saveDuty)
+    // ------------------------------------------------------
     @PostMapping
-    public DutySchedule createDuty(@RequestBody DutyScheduleRequest request) {
-        return dutyService.saveDuty(request);
+    public ResponseEntity<?> createDuty(@RequestBody DutyScheduleRequest request) {
+        try {
+            DutySchedule saved = dutyService.createDuty(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved); // 201 CREATED
+        } catch (IllegalArgumentException ex) {
+            // for validation errors like "Status is required" etc.
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ex.getMessage()); // 400 BAD REQUEST
+        } catch (Exception ex) {
+            // unexpected server error
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to save duty");
+        }
     }
 
-
+    // ------------------------------------------------------
+    // 3) Get duties between a date range
+    // ------------------------------------------------------
     @GetMapping("/range")
-    public List<DutySchedule> getDutiesInRange(
-            @RequestParam LocalDate start,
-            @RequestParam LocalDate end
-    ){
-        return dutyService.getDutiesBetween(start, end);
+    public ResponseEntity<List<DutySchedule>> getDutiesInRange(
+            @RequestParam("start")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate start,
+            @RequestParam("end")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate end
+    ) {
+        List<DutySchedule> duties = dutyService.getDutiesBetween(start, end);
+        return ResponseEntity.ok(duties); // 200 OK
     }
+
+    // ------------------------------------------------------
+    // 4) Generate Duty Schedule PDF
+    // ------------------------------------------------------
     @GetMapping(value = "/report/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> getDutyScheduleReportPdf(
             @RequestParam("start")
@@ -65,7 +92,6 @@ public class DutyScheduleController {
         // this makes browser download as a file named duty-schedule-report.pdf
         headers.setContentDispositionFormData("attachment", "duty-schedule-report.pdf");
 
-        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK); // 200 OK
     }
 }
-

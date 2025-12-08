@@ -2,6 +2,7 @@ package com.crimeLink.analyzer.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import com.crimeLink.analyzer.enums.DutyStatus;
 
 @Entity
 @Table(name = "duty_schedule")
@@ -18,8 +19,9 @@ public class DutySchedule {
     @Column(name = "time_range")
     private String timeRange;   // "06:00-21:00"
 
-    @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)   // 🔹 NO DEFAULT – must be provided
+    private DutyStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_officer", nullable = false)
@@ -57,11 +59,11 @@ public class DutySchedule {
         this.timeRange = timeRange;
     }
 
-    public String getStatus() {
+    public DutyStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(DutyStatus status) {
         this.status = status;
     }
 

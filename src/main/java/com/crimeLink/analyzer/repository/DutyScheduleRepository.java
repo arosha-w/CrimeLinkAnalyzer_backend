@@ -7,14 +7,16 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DutyScheduleRepository extends JpaRepository<DutySchedule, Long> {
 
-    List<DutySchedule> findByAssignedOfficer_UserIdAndDate(
-            Long userId, LocalDate date
+    Optional<DutySchedule> findByDateAndAssignedOfficer_UserIdAndTimeRange(
+            LocalDate date,
+            Integer userId,
+            String timeRange
     );
-
     List<DutySchedule> findByDateBetween(
             LocalDate start, LocalDate end
     );
