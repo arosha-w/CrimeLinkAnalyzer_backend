@@ -13,6 +13,10 @@ public class DutySchedule {
     @Column(name = "schedule_id")
     private Long scheduleId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_officer", nullable = false)
+    private User assignedOfficer;
+
     @Column(name = "date", nullable = false)
     private LocalDate date;
 
@@ -22,10 +26,6 @@ public class DutySchedule {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)   // 🔹 NO DEFAULT – must be provided
     private DutyStatus status;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_officer", nullable = false)
-    private User assignedOfficer;
 
     @Column(name = "location")
     private String location;

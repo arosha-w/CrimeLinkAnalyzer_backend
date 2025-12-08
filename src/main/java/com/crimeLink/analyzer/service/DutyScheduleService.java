@@ -114,7 +114,16 @@ public class DutyScheduleService {
 
         if (status == DutyStatus.Absent) {
             // 🔹 For ABSENT: allow saving even with no timeRange/location
-            duty = new DutySchedule();
+            duty = dutyRepo
+                    .findByDateAndAssignedOfficer_UserId(req.getDate(), officer.getUserId())
+                    .orElse(null);
+
+            if (duty == null) {
+                duty = new DutySchedule();
+                duty.setAssignedOfficer(officer);
+                duty.setDate(req.getDate());
+                isNew = true; // first time marking absent
+            }
             duty.setAssignedOfficer(officer);
             duty.setDate(req.getDate());
             duty.setStatus(DutyStatus.Absent);
