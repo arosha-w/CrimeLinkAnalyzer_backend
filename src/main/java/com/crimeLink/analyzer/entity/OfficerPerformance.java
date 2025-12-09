@@ -30,17 +30,9 @@ public class OfficerPerformance {
     @Column(name = "last_duty_date")
     private LocalDate lastDutyDate;
 
-    @Column(name = "preferred_locations")
-    private String preferredLocations; // e.g. "Colombo,Kandy"
-
-    @Column(name = "average_duty_hours")
-    private Double averageDutyHours;
 
     @Column(name = "reliability_score")
     private Integer reliabilityScore; // 0–100
-
-    @Column(name = "availability_status")
-    private String availabilityStatus; // "Available", "OnDuty", "OnLeave", ...
 
     @Column(name = "last_updated")
     private LocalDateTime lastUpdated;

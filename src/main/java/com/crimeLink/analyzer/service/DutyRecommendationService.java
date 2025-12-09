@@ -22,6 +22,11 @@ public class DutyRecommendationService {
     private final UserRepository userRepo;
     private final OfficerPerformanceRepository performanceRepo;
 
+    /**
+     * Main entry: get ranked officer recommendations for a given request.
+     * - Favors officers with LOWER workload (less total duties)
+     * - Considers recency and reliability
+     */
     public List<OfficerRecommendationDTO> getOfficerRecommendations(DutyRecommendationRequest req) {
 
         // 1) All ACTIVE field officers
@@ -30,7 +35,7 @@ public class DutyRecommendationService {
         // 2) Map officer → score + explanation
         List<OfficerRecommendationDTO> scored = officers.stream()
                 .map(officer -> {
-                    // 🔧 FIX: repository returns LIST, not Optional
+                    // performanceRepo returns LIST (not Optional)
                     List<OfficerPerformance> list =
                             performanceRepo.findByOfficer_UserId(officer.getUserId());
                     OfficerPerformance perf = list.isEmpty() ? null : list.get(0);
@@ -38,20 +43,28 @@ public class DutyRecommendationService {
                     double score = calculateScore(officer, perf, req);
                     String reason = buildReason(officer, perf, req, score);
 
-                    String badgeNo = null; // set from officer if you have this field
+                    String badgeNo = null; // set from officer if you have a badge field
+
+                    // since availability & preferredLocation are removed from entity,
+                    // we just return defaults for DTO fields:
+                    String availabilityStatus = "Unknown";
+                    boolean locationMatch = false;
 
                     return new OfficerRecommendationDTO(
-                            officer.getUserId(),
-                            officer.getName(),
-                            badgeNo,
-                            score,
-                            perf != null ? perf.getAvailabilityStatus() : "Unknown",
-                            perf != null ? perf.getLastDutyDate() : null,
-                            perf != null ? perf.getTotalDuties() : 0,
-                            isLocationMatch(perf, req.getLocation()),
-                            reason
+                            officer.getUserId(),                            // officerId
+                            officer.getName(),                             // name
+                            badgeNo,                                      // badgeNo
+                            score,                                        // recommendationScore
+                            availabilityStatus,                           // availabilityStatus (DTO field)
+                            perf != null ? perf.getLastDutyDate() : null, // lastDutyDate
+                            perf != null && perf.getTotalDuties() != null
+                                    ? perf.getTotalDuties()
+                                    : 0,                                   // totalDuties
+                            locationMatch,                                // locationMatch
+                            reason                                        // reason
                     );
                 })
+                // highest score first
                 .sorted(Comparator.comparingDouble(OfficerRecommendationDTO::getRecommendationScore).reversed())
                 .collect(Collectors.toList());
 
@@ -66,56 +79,58 @@ public class DutyRecommendationService {
 
     // ---------- Scoring helpers ----------
 
+    /**
+     * Final score = weighted combination of:
+     * - Workload (strong weight)   => fewer duties → higher score
+     * - Recency (when last duty was done)
+     * - Reliability (from performance table)
+     */
     private double calculateScore(User officer, OfficerPerformance perf, DutyRecommendationRequest req) {
 
-        double workloadWeight = 0.30;
-        double availabilityWeight = 0.25;
-        double locationWeight = 0.20;
-        double recencyWeight = 0.15;
-        double reliabilityWeight = 0.10;
+        double workloadWeight     = 0.70; // strongly prefer low workload
+        double recencyWeight      = 0.20;
+        double reliabilityWeight  = 0.10;
 
-        double workloadScore = calcWorkloadScore(perf);
-        double availabilityScore = calcAvailabilityScore(perf);
-        double locationScore = calcLocationScore(perf, req.getLocation());
-        double recencyScore = calcRecencyScore(perf, req.getDate());
-        double reliabilityScore = calcReliabilityScore(perf);
+        double workloadScore     = calcWorkloadScore(perf);
+
+        // If DutyRecommendationRequest.date is a LocalDate:
+        LocalDate targetDate     = req.getDate();
+        // If it is a String, use: LocalDate targetDate = LocalDate.parse(req.getDate());
+
+        double recencyScore      = calcRecencyScore(perf, targetDate);
+        double reliabilityScore  = calcReliabilityScore(perf);
 
         return workloadWeight * workloadScore
-                + availabilityWeight * availabilityScore
-                + locationWeight * locationScore
                 + recencyWeight * recencyScore
                 + reliabilityWeight * reliabilityScore;
     }
 
+    /**
+     * Workload score:
+     * - Very few duties (≤ 5)   → 100 (strongly recommended)
+     * - Moderate (6–15)         → 80
+     * - Heavy (16–30)           → 50
+     * - Very heavy (> 30)       → 20
+     *
+     * This makes low-duty officers float to the top of the list.
+     */
     private double calcWorkloadScore(OfficerPerformance perf) {
-        if (perf == null || perf.getTotalDuties() == null) return 100.0;
+        if (perf == null || perf.getTotalDuties() == null) return 100.0; // no history → treat as free
         int total = perf.getTotalDuties();
-        if (total <= 5) return 100.0;
-        if (total <= 15) return 70.0;
-        if (total <= 30) return 40.0;
-        return 20.0;
+
+        if (total <= 5)   return 100.0; // very low load
+        if (total <= 15)  return 80.0;  // moderate
+        if (total <= 30)  return 50.0;  // high
+        return 20.0;                    // very high workload
     }
 
-    private double calcAvailabilityScore(OfficerPerformance perf) {
-        if (perf == null || perf.getAvailabilityStatus() == null) return 50.0;
-        return switch (perf.getAvailabilityStatus()) {
-            case "Active" -> 100.0;
-            case "OnDuty" -> 40.0;
-            case "OnLeave" -> 10.0;
-            case "Absent" -> 0.0;
-            default -> 50.0;
-        };
-    }
-
-    private boolean isLocationMatch(OfficerPerformance perf, String location) {
-        if (perf == null || perf.getPreferredLocations() == null || location == null) return false;
-        return perf.getPreferredLocations().toLowerCase().contains(location.toLowerCase());
-    }
-
-    private double calcLocationScore(OfficerPerformance perf, String location) {
-        return isLocationMatch(perf, location) ? 100.0 : 50.0;
-    }
-
+    /**
+     * Recency score:
+     * - Officer hasn't worked for ≥ 7 days → 100 (very available)
+     * - 3–6 days ago                       → 70
+     * - 1–2 days ago                       → 40
+     * - Same day / very recent             → 20
+     */
     private double calcRecencyScore(OfficerPerformance perf, LocalDate targetDate) {
         if (perf == null || perf.getLastDutyDate() == null || targetDate == null) return 80.0;
         long days = ChronoUnit.DAYS.between(perf.getLastDutyDate(), targetDate);
@@ -125,28 +140,37 @@ public class DutyRecommendationService {
         return 20.0;
     }
 
+    /**
+     * Reliability score is taken directly from performance table (0–100).
+     */
     private double calcReliabilityScore(OfficerPerformance perf) {
         if (perf == null || perf.getReliabilityScore() == null) return 60.0;
         return perf.getReliabilityScore();
     }
 
+    /**
+     * Human-readable reason string for UI.
+     */
     private String buildReason(User officer, OfficerPerformance perf,
                                DutyRecommendationRequest req, double score) {
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Score: ").append(String.format("%.1f", score)).append(". ");
+        sb.append("Score: ").append(String.format("%.1f", score)).append(", ");
 
         if (perf == null) {
-            sb.append("No historical data; treated as neutral.");
+            sb.append("No historical data; treated as low workload and neutral reliability.");
             return sb.toString();
         }
 
-        if (isLocationMatch(perf, req.getLocation())) {
-            sb.append("Experienced in ").append(req.getLocation()).append(". ");
+        sb.append("Total duties: ").append(perf.getTotalDuties()).append(",  ");
+
+        if (perf.getLastDutyDate() != null) {
+            sb.append("Last duty on ").append(perf.getLastDutyDate()).append(",  ");
         }
 
-        sb.append("Total duties: ").append(perf.getTotalDuties()).append(". ");
-        sb.append("Availability: ").append(perf.getAvailabilityStatus()).append(". ");
+        if (perf.getReliabilityScore() != null) {
+            sb.append("Reliability: ").append(perf.getReliabilityScore()).append("  ");
+        }
 
         return sb.toString();
     }

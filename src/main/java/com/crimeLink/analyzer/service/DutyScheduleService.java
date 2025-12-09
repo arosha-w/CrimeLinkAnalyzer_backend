@@ -164,12 +164,13 @@ public class DutyScheduleService {
 
         DutySchedule saved = dutyRepo.save(duty);
 
-        // Update performance ONLY for NEW duties (avoid double counting)
-        if (isNew) {
+// ✅ Only count duties with ACTIVE or COMPLETED status
+        if (isNew && (saved.getStatus() == DutyStatus.Active || saved.getStatus() == DutyStatus.Completed)) {
             updateOfficerPerformanceAfterDuty(officer, saved);
         }
 
         return saved;
+
     }
 
     // Bulk create/update duties
@@ -197,26 +198,52 @@ public class DutyScheduleService {
     private void updateOfficerPerformanceAfterDuty(User officer, DutySchedule duty) {
 
         // repository must be: List<OfficerPerformance> findByOfficer_UserId(Integer userId);
+        if (duty.getStatus() == DutyStatus.Absent) return;
+
+
         List<OfficerPerformance> perfList =
                 performanceRepo.findByOfficer_UserId(officer.getUserId());
 
         OfficerPerformance perf;
+
+        if (duty.getStatus() == DutyStatus.Absent) {
+            return;
+        }
 
         if (perfList.isEmpty()) {
             // create new record
             perf = OfficerPerformance.builder()
                     .officer(officer)
                     .totalDuties(0)
-                    .reliabilityScore(60)
-                    .availabilityStatus("Active")
+                    .reliabilityScore(50)
+
                     .build();
         } else {
             // use first existing record (if duplicates, DB cleanup can be done later)
             perf = perfList.get(0);
         }
 
-        int total = perf.getTotalDuties() == null ? 0 : perf.getTotalDuties();
-        perf.setTotalDuties(total + 1);
+        // 2) Current values (with safe defaults)
+        int currentTotalDuties = perf.getTotalDuties() == null ? 0 : perf.getTotalDuties();
+        int currentReliability = perf.getReliabilityScore() == null ? 50 : perf.getReliabilityScore();
+
+        // 3) Update based on duty status
+        if (duty.getStatus() == DutyStatus.Completed || duty.getStatus() == DutyStatus.Active) {
+            // Only Active/Completed count as duties in performance
+            perf.setTotalDuties(currentTotalDuties + 1);
+        }
+
+        int newReliability = currentReliability;
+
+        if (duty.getStatus() == DutyStatus.Completed) {
+            // completed duty → small reward
+            newReliability = Math.min(100, currentReliability + 2);
+        } else if (duty.getStatus() == DutyStatus.Absent) {
+            // absent → bigger penalty
+            newReliability = Math.max(0, currentReliability - 5);
+        }
+        perf.setReliabilityScore(newReliability);
+
         perf.setLastDutyDate(duty.getDate());
         perf.setLastUpdated(LocalDateTime.now());
 
