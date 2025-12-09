@@ -6,7 +6,6 @@ import com.crimeLink.analyzer.entity.OfficerPerformance;
 import com.crimeLink.analyzer.entity.User;
 import com.crimeLink.analyzer.repository.OfficerPerformanceRepository;
 import com.crimeLink.analyzer.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,12 +15,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class DutyRecommendationService {
 
     private final UserRepository userRepo;
     private final OfficerPerformanceRepository performanceRepo;
 
+    public DutyRecommendationService(UserRepository userRepo, OfficerPerformanceRepository performanceRepo) {
+        this.userRepo = userRepo;
+        this.performanceRepo = performanceRepo;
+    }
     /**
      * Main entry: get ranked officer recommendations for a given request.
      * - Favors officers with LOWER workload (less total duties)
@@ -76,7 +78,6 @@ public class DutyRecommendationService {
 
         return scored;
     }
-
     // ---------- Scoring helpers ----------
 
     /**
@@ -104,7 +105,6 @@ public class DutyRecommendationService {
                 + recencyWeight * recencyScore
                 + reliabilityWeight * reliabilityScore;
     }
-
     /**
      * Workload score:
      * - Very few duties (≤ 5)   → 100 (strongly recommended)
@@ -119,11 +119,10 @@ public class DutyRecommendationService {
         int total = perf.getTotalDuties();
 
         if (total <= 5)   return 100.0; // very low load
-        if (total <= 15)  return 80.0;  // moderate
-        if (total <= 30)  return 50.0;  // high
+        if (total <= 10)  return 80.0;  // moderate
+        if (total <= 15)  return 50.0;  // high
         return 20.0;                    // very high workload
     }
-
     /**
      * Recency score:
      * - Officer hasn't worked for ≥ 7 days → 100 (very available)
@@ -139,7 +138,6 @@ public class DutyRecommendationService {
         if (days >= 1) return 40.0;
         return 20.0;
     }
-
     /**
      * Reliability score is taken directly from performance table (0–100).
      */

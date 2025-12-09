@@ -33,8 +33,6 @@ public class DutySchedule {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    // ---------- getters & setters ----------
-
     public Long getScheduleId() {
         return scheduleId;
     }

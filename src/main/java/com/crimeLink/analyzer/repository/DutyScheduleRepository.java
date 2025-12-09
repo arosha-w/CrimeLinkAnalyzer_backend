@@ -26,10 +26,10 @@ public interface DutyScheduleRepository extends JpaRepository<DutySchedule, Long
             LocalDate date,
             Integer userId
     );
-    // 🔹 NEW: total duties ever
+    // total duties ever
     long countByAssignedOfficer_UserId(Integer userId);
 
-    // 🔹 NEW: duties in recent period (e.g. last 7 days)
+    // duties in recent period (e.g. last 7 days)
     long countByAssignedOfficer_UserIdAndDateBetween(
             Integer userId,
             LocalDate start,

@@ -24,10 +24,7 @@ public class DutyScheduleController {
     public DutyScheduleController(DutyScheduleService dutyService) {
         this.dutyService = dutyService;
     }
-
-    // ------------------------------------------------------
     // 1) Get officer rows for a specific date
-    // ------------------------------------------------------
     @GetMapping("/officers")
     public ResponseEntity<List<OfficerDutyRowDTO>> getOfficersForDate(
             @RequestParam("date")
@@ -35,17 +32,14 @@ public class DutyScheduleController {
             LocalDate date
     ) {
         List<OfficerDutyRowDTO> rows = dutyService.getOfficerRowsForDate(date);
-        return ResponseEntity.ok(rows); // 200 OK
+        return ResponseEntity.ok(rows);
     }
-
-    // ------------------------------------------------------
     // 2) Create / Save a duty (upsert via service.saveDuty)
-    // ------------------------------------------------------
     @PostMapping
     public ResponseEntity<?> createDuty(@RequestBody DutyScheduleRequest request) {
         try {
             DutySchedule saved = dutyService.createDuty(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(saved); // 201 CREATED
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         } catch (IllegalArgumentException ex) {
             // for validation errors like "Status is required" etc.
             return ResponseEntity
@@ -58,10 +52,7 @@ public class DutyScheduleController {
                     .body("Failed to save duty");
         }
     }
-
-    // ------------------------------------------------------
     // 3) Get duties between a date range
-    // ------------------------------------------------------
     @GetMapping("/range")
     public ResponseEntity<List<DutySchedule>> getDutiesInRange(
             @RequestParam("start")
@@ -72,12 +63,9 @@ public class DutyScheduleController {
             LocalDate end
     ) {
         List<DutySchedule> duties = dutyService.getDutiesBetween(start, end);
-        return ResponseEntity.ok(duties); // 200 OK
+        return ResponseEntity.ok(duties);
     }
-
-    // ------------------------------------------------------
     // 4) Generate Duty Schedule PDF
-    // ------------------------------------------------------
     @GetMapping(value = "/report/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> getDutyScheduleReportPdf(
             @RequestParam("start")
@@ -92,6 +80,6 @@ public class DutyScheduleController {
         // this makes browser download as a file named duty-schedule-report.pdf
         headers.setContentDispositionFormData("attachment", "duty-schedule-report.pdf");
 
-        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK); // 200 OK
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 }
