@@ -39,6 +39,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers("/api/admin/health").permitAll()
                         .requestMatchers("/api/database/**").permitAll()
+                        .requestMatchers("/api/test").permitAll()
 
                         // FIXED — Allow ALL duty schedule operations for OIC
                         .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
