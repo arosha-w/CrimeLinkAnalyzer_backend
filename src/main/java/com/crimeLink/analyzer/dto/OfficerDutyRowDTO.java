@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OfficerDutyRowDTO {
     private Integer officerId;
-    private String name;
+    private String officerName;
     private String location;
-    private String time;
+    private String timeRange;
     private String status;
     private String description;
 }
