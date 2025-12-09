@@ -45,6 +45,11 @@ public class JwtService {
             UserDetails userDetails,
             long expiration
     ) {
+        // Add authorities (roles) to JWT claims
+        extraClaims.put("authorities", userDetails.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .toList());
+        
         return Jwts
                 .builder()
                 .claims(extraClaims)

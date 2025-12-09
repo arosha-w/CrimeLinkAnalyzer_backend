@@ -3,6 +3,7 @@ package com.crimeLink.analyzer.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -33,15 +34,16 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - no authentication required
+                        // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
-                        .requestMatchers("/api/test").permitAll()
+                        .requestMatchers("/api/admin/health").permitAll()
                         .requestMatchers("/api/database/**").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        // Role-based endpoints
-                        .requestMatchers("/api/admin/**").hasRole("Admin")
-                        // All other endpoints require authentication
+
+                        // FIXED — Allow ALL duty schedule operations for OIC
+                        .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
+
+                        // Everything else authenticated
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -54,7 +56,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    @SuppressWarnings("deprecation")
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
@@ -72,3 +73,4 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
+
