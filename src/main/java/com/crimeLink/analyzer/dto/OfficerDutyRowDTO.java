@@ -11,7 +11,7 @@ public class OfficerDutyRowDTO {
     private Integer officerId;
     private String name;
     private String location;
-    private String time;
+    private String datetime;
     private String status;
     private String description;
 }
