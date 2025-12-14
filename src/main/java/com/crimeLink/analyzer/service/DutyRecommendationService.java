@@ -6,7 +6,9 @@ import com.crimeLink.analyzer.entity.OfficerPerformance;
 import com.crimeLink.analyzer.entity.User;
 import com.crimeLink.analyzer.repository.OfficerPerformanceRepository;
 import com.crimeLink.analyzer.repository.UserRepository;
+import jakarta.persistence.Entity;
 import org.springframework.stereotype.Service;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
