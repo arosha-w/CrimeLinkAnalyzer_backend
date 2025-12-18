@@ -22,8 +22,10 @@ public class Vehicle {
     @Column(nullable = false)
     private String ownerName;
 
-
+    @Column(nullable = false)
     private String vehicleType;
+
+    private String status;
 
     private String lastUpdate;
 

@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/vehicles")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
 public class VehicleController {
 
     @Autowired
@@ -19,29 +19,50 @@ public class VehicleController {
 
     @GetMapping
     public ResponseEntity<List<Vehicle>> getVehicles(){
-        List<Vehicle> vehicles = vehicleService.getAllVehicles();
-        return ResponseEntity.ok(vehicles);
+        try {
+            List<Vehicle> vehicles = vehicleService.getAllVehicles();
+            return ResponseEntity.ok(vehicles);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping
     public ResponseEntity<Vehicle> addVehicle(@RequestBody Vehicle vehicle){
-        Vehicle savedVehicle = vehicleService.addVehicle(vehicle);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedVehicle);
+        try {
+            Vehicle savedVehicle = vehicleService.addVehicle(vehicle);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedVehicle);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/{id}")  // ← Path variable: /api/vehicles/5
     public ResponseEntity<Vehicle> getVehicleById(@PathVariable Long id) {
-        // ↑ @PathVariable extracts "5" from URL
-        Vehicle vehicle = vehicleService.getVehicleById(id);
-        return vehicle != null
-                ? ResponseEntity.ok(vehicle)  // ← 200 OK
-                : ResponseEntity.notFound().build();  // ← 404 Not Found
+
+        try {
+            Vehicle vehicle = vehicleService.getVehicleById(id);
+            if (vehicle != null) {
+                return ResponseEntity.ok(vehicle);
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteVehicle(@PathVariable Long id) {
-        vehicleService.deleteVehicle(id);
-        return ResponseEntity.noContent().build();  // ← 204 No Content
+        try {
+            vehicleService.deleteVehicle(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
 
