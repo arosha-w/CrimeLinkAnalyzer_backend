@@ -27,6 +27,6 @@ public class Vehicle {
 
     private String status;
 
-    private String lastUpdate;
+    private String lostDate;
 
 }

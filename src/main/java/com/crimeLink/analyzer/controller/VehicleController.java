@@ -64,5 +64,20 @@ public class VehicleController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    @PutMapping("/{id}")
+    public ResponseEntity<Vehicle> updateVehicle(@PathVariable Long id,@RequestBody Vehicle vehicleDetails){
+        try{
+            Vehicle updatedVehicle = vehicleService.updateVehicle(id, vehicleDetails);
+
+            if(updatedVehicle != null){
+                return ResponseEntity.ok(updatedVehicle);
+            }
+            return ResponseEntity.notFound().build();
+        }catch (Exception e){
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }
 

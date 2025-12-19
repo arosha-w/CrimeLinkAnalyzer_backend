@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class VehicleService {
@@ -22,9 +23,9 @@ public class VehicleService {
 
     public Vehicle addVehicle(Vehicle vehicle){
 
-        if(vehicle.getLastUpdate() == null || vehicle.getLastUpdate().isEmpty()){
+        if(vehicle.getLostDate() == null || vehicle.getLostDate().isEmpty()){
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            vehicle.setLastUpdate(LocalDateTime.now().format(formatter));
+            vehicle.setLostDate(LocalDateTime.now().format(formatter));
 
         }
         return vehicleRepository.save(vehicle);
@@ -36,5 +37,22 @@ public class VehicleService {
 
     public void deleteVehicle(Long id){
         vehicleRepository.deleteById(id);
+    }
+
+    public Vehicle updateVehicle(Long id, Vehicle vehicleDetails){
+        Optional<Vehicle> optionalVehicle = vehicleRepository.findById(id);
+
+        if(optionalVehicle.isPresent()){
+            Vehicle vehicle = optionalVehicle.get();
+
+            vehicle.setNumberPlate(vehicleDetails.getNumberPlate());
+            vehicle.setOwnerName(vehicleDetails.getOwnerName());
+            vehicle.setVehicleType(vehicleDetails.getVehicleType());
+            vehicle.setStatus(vehicleDetails.getStatus());
+            vehicle.setLostDate(vehicleDetails.getLostDate());
+
+            return vehicleRepository.save(vehicle);
+        }
+        return null;
     }
 }
