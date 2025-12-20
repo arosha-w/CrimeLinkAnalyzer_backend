@@ -55,17 +55,17 @@ public class DutyRecommendationService {
                     boolean locationMatch = false;
 
                     return new OfficerRecommendationDTO(
-                            officer.getUserId(),                            // officerId
-                            officer.getName(),                             // name
-                            badgeNo,                                      // badgeNo
-                            score,                                        // recommendationScore
-                            availabilityStatus,                           // availabilityStatus (DTO field)
-                            perf != null ? perf.getLastDutyDate() : null, // lastDutyDate
+                            officer.getUserId(),
+                            officer.getName(),
+                            badgeNo,
+                            score,
+                            availabilityStatus,
+                            perf != null ? perf.getLastDutyDate() : null,
                             perf != null && perf.getTotalDuties() != null
                                     ? perf.getTotalDuties()
-                                    : 0,                                   // totalDuties
-                            locationMatch,                                // locationMatch
-                            reason                                        // reason
+                                    : 0,
+                            locationMatch,
+                            reason
                     );
                 })
                 // highest score first
@@ -80,7 +80,7 @@ public class DutyRecommendationService {
 
         return scored;
     }
-    // ---------- Scoring helpers ----------
+
 
     /**
      * Final score = weighted combination of:
@@ -148,9 +148,7 @@ public class DutyRecommendationService {
         return perf.getReliabilityScore();
     }
 
-    /**
-     * Human-readable reason string for UI.
-     */
+
     private String buildReason(User officer, OfficerPerformance perf,
                                DutyRecommendationRequest req, double score) {
 
