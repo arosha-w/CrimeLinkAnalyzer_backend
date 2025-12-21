@@ -19,7 +19,7 @@ public class CorsConfig {
         config.setAllowCredentials(true);
         // Use allowedOriginPatterns instead of allowedOrigins when credentials are enabled
         config.setAllowedOriginPatterns(List.of("*"));
-        // Allow all headers
+
         config.setAllowedHeaders(List.of("*"));
         // Allow specific HTTP methods
         config.setAllowedMethods(Arrays.asList(

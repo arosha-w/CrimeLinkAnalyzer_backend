@@ -76,7 +76,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // FIXED CORS Configuration - Using CorsConfigurationSource instead of WebMvcConfigurer
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
