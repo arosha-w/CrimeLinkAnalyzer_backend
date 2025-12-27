@@ -31,21 +31,21 @@ public class Weapon {
 
 
     @Column(name = "register_date", updatable = false)
-    private LocalDateTime registerAt;
+    private LocalDateTime registerDate;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @Column(name = "updated_date")
+    private LocalDateTime updatedDate;
 
     private String remarks;
 
     @PrePersist
     void onCreate() {
-        registerAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        registerDate = LocalDateTime.now();
+        updatedDate = LocalDateTime.now();
     }
 
     @PreUpdate
     void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedDate = LocalDateTime.now();
     }
 }

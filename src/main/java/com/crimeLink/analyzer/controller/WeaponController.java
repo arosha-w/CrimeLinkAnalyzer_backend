@@ -8,26 +8,34 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/weapon")
+@CrossOrigin(origins = "http://localhost:5173")
 public class WeaponController {
-    private WeaponService weaponService;
 
-    // ================= ADD WEAPON =================
-    @PostMapping("/add-weapon")
-    public ResponseEntity<Weapon> addWeapon(@RequestBody WeaponCreateDTO dto) {
-        Weapon savedWeapon = weaponService.addWeapon(dto);
-        return new ResponseEntity<>(savedWeapon, HttpStatus.CREATED);
+    private final WeaponService weaponService;
+
+    public WeaponController(WeaponService weaponService) {
+        this.weaponService = weaponService;
     }
 
-    // update weapon
-    @PutMapping("/{serialNumber}")
+    @PostMapping("/add-weapon")
+    public ResponseEntity<Weapon> addWeapon(@RequestBody WeaponCreateDTO dto) {
+        return new ResponseEntity<>(weaponService.addWeapon(dto), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/weapon-update/{serialNumber}")
     public ResponseEntity<Weapon> updateWeapon(
             @PathVariable String serialNumber,
             @RequestBody WeaponUpdateDTO dto
     ) {
-        Weapon updatedWeapon = weaponService.updateWeapon(serialNumber, dto);
-        return ResponseEntity.ok(updatedWeapon);
+        return ResponseEntity.ok(weaponService.updateWeapon(serialNumber, dto));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<Weapon>> getAllWeapons() {
+        return ResponseEntity.ok(weaponService.getAllWeapons());
+    }
 }

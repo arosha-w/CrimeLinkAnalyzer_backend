@@ -8,6 +8,5 @@ public class WeaponCreateDTO {
 
     private String serialNumber;
     private String weaponType;
-    private WeaponStatus status;
     private String remarks;
 }
