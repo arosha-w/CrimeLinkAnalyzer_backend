@@ -30,7 +30,7 @@ public class WeaponServiceImpl implements WeaponService {
         weapon.setSerialNumber(dto.getSerialNumber());
         weapon.setWeaponType(dto.getWeaponType());
         weapon.setRemarks(dto.getRemarks());
-        weapon.setStatus(WeaponStatus.ACTIVE);
+        weapon.setStatus(WeaponStatus.AVAILABLE);
 
         return weaponRepository.save(weapon);
     }

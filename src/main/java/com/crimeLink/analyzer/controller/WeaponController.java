@@ -12,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/weapon")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*")
 public class WeaponController {
 
     private final WeaponService weaponService;
@@ -22,16 +22,26 @@ public class WeaponController {
     }
 
     @PostMapping("/add-weapon")
-    public ResponseEntity<Weapon> addWeapon(@RequestBody WeaponCreateDTO dto) {
-        return new ResponseEntity<>(weaponService.addWeapon(dto), HttpStatus.CREATED);
+    public ResponseEntity<?> addWeapon(@RequestBody WeaponCreateDTO dto) {
+        try {
+            Weapon weapon = weaponService.addWeapon(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(weapon);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        }
     }
 
     @PutMapping("/weapon-update/{serialNumber}")
-    public ResponseEntity<Weapon> updateWeapon(
+    public ResponseEntity<?> updateWeapon(
             @PathVariable String serialNumber,
             @RequestBody WeaponUpdateDTO dto
     ) {
-        return ResponseEntity.ok(weaponService.updateWeapon(serialNumber, dto));
+        try {
+            Weapon weapon = weaponService.updateWeapon(serialNumber, dto);
+            return ResponseEntity.ok(weapon);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        }
     }
 
     @GetMapping("/all")
