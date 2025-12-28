@@ -30,10 +30,10 @@ public class CrimeReport {
     private long reportId;
 
     @Column(name = "longitude", nullable = false)
-    private Long longitude;
+    private Double longitude;
 
     @Column(name = "latitude", nullable = false)
-    private Long latitude;
+    private Double latitude;
 
     @Column(name = "description", columnDefinition = "TEXT", nullable = false)
     private String description;

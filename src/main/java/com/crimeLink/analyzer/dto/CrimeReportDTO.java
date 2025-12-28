@@ -12,8 +12,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CrimeReportDTO {
     private Long reportId;
-    private Long longitude;
-    private Long latitude;
+    private Double longitude;
+    private Double latitude;
     private String description;
     private LocalDate dateReported;
     private LocalTime timeReported;
