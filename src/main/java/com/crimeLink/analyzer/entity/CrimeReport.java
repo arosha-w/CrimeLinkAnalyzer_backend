@@ -29,11 +29,11 @@ public class CrimeReport {
     @Column(name = "report_id")
     private long reportId;
 
-    @Column(name = "longitude", nullable = false)
-    private Double longitude;
-
     @Column(name = "latitude", nullable = false)
     private Double latitude;
+
+    @Column(name = "longitude", nullable = false)
+    private Double longitude;
 
     @Column(name = "description", columnDefinition = "TEXT", nullable = false)
     private String description;

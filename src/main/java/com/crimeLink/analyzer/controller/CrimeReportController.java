@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.crimeLink.analyzer.dto.CrimeLocationDTO;
 import com.crimeLink.analyzer.dto.CrimeReportDTO;
-import com.crimeLink.analyzer.entity.CrimeReport;
 import com.crimeLink.analyzer.service.CrimeReportService;
 
 import lombok.AllArgsConstructor;
@@ -39,8 +39,13 @@ public class CrimeReportController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CrimeReportDTO> getCrimeReportById(@PathVariable("id") Long reportId){
+    public ResponseEntity<CrimeReportDTO> getCrimeReportById(@PathVariable("id") Long reportId) {
         CrimeReportDTO dto = crimeReportService.getCrimeReportById(reportId);
         return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/map")
+    public List<CrimeLocationDTO> getCrimeMapLocations() {
+        return crimeReportService.getCrimeMapLocations();
     }
 }

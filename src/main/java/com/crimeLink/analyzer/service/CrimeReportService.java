@@ -5,9 +5,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.crimeLink.analyzer.dto.CrimeLocationDTO;
 import com.crimeLink.analyzer.dto.CrimeReportDTO;
 import com.crimeLink.analyzer.entity.CrimeReport;
-import com.crimeLink.analyzer.entity.CrimeType;
 import com.crimeLink.analyzer.mapper.CrimeReportMapper;
 import com.crimeLink.analyzer.repository.CrimeReportRepository;
 
@@ -52,5 +52,9 @@ public class CrimeReportService {
     public CrimeReportDTO getCrimeReportById(Long reportId){
         CrimeReport report = crimeReportRepository.findById(reportId).orElseThrow(() -> new RuntimeException("Report not found"));
         return CrimeReportMapper.mapToCrimeReportDTO(report);
+    }
+
+    public List<CrimeLocationDTO> getCrimeMapLocations(){
+        return crimeReportRepository.findCrimeLocations();
     }
 }
