@@ -1,6 +1,6 @@
 package com.crimeLink.analyzer.controller;
 
-import com.crimeLink.analyzer.dto.WeaponCreateDTO;
+import com.crimeLink.analyzer.dto.WeaponAddDTO;
 import com.crimeLink.analyzer.dto.WeaponUpdateDTO;
 import com.crimeLink.analyzer.entity.Weapon;
 import com.crimeLink.analyzer.service.WeaponService;
@@ -22,7 +22,7 @@ public class WeaponController {
     }
 
     @PostMapping("/add-weapon")
-    public ResponseEntity<?> addWeapon(@RequestBody WeaponCreateDTO dto) {
+    public ResponseEntity<?> addWeapon(@RequestBody WeaponAddDTO dto) {
         try {
             Weapon weapon = weaponService.addWeapon(dto);
             return ResponseEntity.status(HttpStatus.CREATED).body(weapon);

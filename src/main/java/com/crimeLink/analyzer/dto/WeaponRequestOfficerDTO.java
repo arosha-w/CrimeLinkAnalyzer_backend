@@ -2,8 +2,6 @@ package com.crimeLink.analyzer.dto;
 
 import lombok.Data;
 
-import java.time.LocalDate;
-
 @Data
 public class WeaponRequestOfficerDTO {
     private Integer userId;

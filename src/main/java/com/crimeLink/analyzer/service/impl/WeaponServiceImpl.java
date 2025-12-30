@@ -1,6 +1,6 @@
 package com.crimeLink.analyzer.service.impl;
 
-import com.crimeLink.analyzer.dto.WeaponCreateDTO;
+import com.crimeLink.analyzer.dto.WeaponAddDTO;
 import com.crimeLink.analyzer.dto.WeaponUpdateDTO;
 import com.crimeLink.analyzer.entity.Weapon;
 import com.crimeLink.analyzer.enums.WeaponStatus;
@@ -20,7 +20,7 @@ public class WeaponServiceImpl implements WeaponService {
     }
 
     @Override
-    public Weapon addWeapon(WeaponCreateDTO dto) {
+    public Weapon addWeapon(WeaponAddDTO dto) {
 
         if (weaponRepository.existsById(dto.getSerialNumber())) {
             throw new RuntimeException("Weapon already exists");

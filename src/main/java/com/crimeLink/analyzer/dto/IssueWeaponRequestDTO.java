@@ -10,5 +10,5 @@ public class IssueWeaponRequestDTO {
     private String weaponSerial;
     private Integer officerId;
     private LocalDate dueDate;
-    private String notes;
+    private String issueNote;
 }

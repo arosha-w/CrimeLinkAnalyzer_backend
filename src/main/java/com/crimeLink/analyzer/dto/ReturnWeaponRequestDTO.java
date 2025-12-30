@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class ReturnWeaponRequestDTO {
 
-    private Long issueId;
-    private String returnNotes;
+    private Integer issueId;
+    private String returnNote;
 }

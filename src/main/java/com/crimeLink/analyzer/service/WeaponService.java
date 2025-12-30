@@ -1,15 +1,14 @@
 package com.crimeLink.analyzer.service;
 
-import com.crimeLink.analyzer.dto.WeaponCreateDTO;
+import com.crimeLink.analyzer.dto.WeaponAddDTO;
 import com.crimeLink.analyzer.dto.WeaponUpdateDTO;
 import com.crimeLink.analyzer.entity.Weapon;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 
 public interface WeaponService {
-    Weapon addWeapon(WeaponCreateDTO dto);
+    Weapon addWeapon(WeaponAddDTO dto);
 
     Weapon updateWeapon(String serialNumber, WeaponUpdateDTO dto);
 

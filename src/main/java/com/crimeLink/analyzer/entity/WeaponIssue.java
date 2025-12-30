@@ -24,17 +24,17 @@ public class WeaponIssue {
 
     /*  ISSUED TO (uses the weapon) */
     @ManyToOne
-    @JoinColumn(name = "issued_to")
+    @JoinColumn(name = "issued_to",referencedColumnName = "user_id")
     private User issuedTo;
 
     /*  HANDED OVER BY (store / OIC) */
     @ManyToOne
-    @JoinColumn(name = "handed_over_by")
+    @JoinColumn(name = "handed_over_by",referencedColumnName = "user_id")
     private User handedOverBy;
 
     /*  RECEIVED BY (return accepting officer) */
     @ManyToOne
-    @JoinColumn(name = "received_by")
+    @JoinColumn(name = "received_by",referencedColumnName = "user_id")
     private User receivedBy;
 
     /*  Issue info */
