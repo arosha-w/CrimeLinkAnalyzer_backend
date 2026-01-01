@@ -1,16 +1,21 @@
 package com.crimeLink.analyzer.controller;
 
+import com.crimeLink.analyzer.dto.AdminPasswordResetRequest;
 import com.crimeLink.analyzer.dto.AuditLogDTO;
 import com.crimeLink.analyzer.entity.LoginAudit;
 import com.crimeLink.analyzer.entity.User;
 import com.crimeLink.analyzer.repository.LoginAuditRepository;
+import com.crimeLink.analyzer.repository.RefreshTokenRepository;
 import com.crimeLink.analyzer.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.Map;
@@ -23,6 +28,7 @@ public class AdminController {
 
     private final UserRepository userRepo;
     private final LoginAuditRepository auditRepo;
+    private final RefreshTokenRepository refreshTokenRepo;
     private final PasswordEncoder passwordEncoder;
 
     /**
@@ -242,5 +248,33 @@ public class AdminController {
                 "database", "Connected",
                 "timestamp", java.time.LocalDateTime.now().toString()
         ));
+    }
+
+    /**
+     * Admin: Reset any user's password
+     * POST /api/admin/reset-password
+     */
+    @PostMapping("/reset-password")
+    @Transactional
+    public ResponseEntity<?> resetUserPassword(@Valid @RequestBody AdminPasswordResetRequest request) {
+        try {
+            User user = userRepo.findById(request.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Update password
+            user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+            userRepo.save(user);
+
+            // Revoke all refresh tokens for security (force re-login)
+            refreshTokenRepo.revokeAllUserTokens(user);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Password reset successfully for user: " + user.getName(),
+                    "info", "All active sessions for this user have been logged out"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Failed to reset password: " + e.getMessage()));
+        }
     }
 }
