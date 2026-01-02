@@ -6,6 +6,5 @@ public enum WeaponStatus {
     DISABLED,
     MAINTENANCE,
     LOST,
-    ACTIVE,
-    INACTIVE
 }
+
