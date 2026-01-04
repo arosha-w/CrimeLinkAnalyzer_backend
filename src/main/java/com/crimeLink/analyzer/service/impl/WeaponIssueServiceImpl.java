@@ -1,8 +1,6 @@
 package com.crimeLink.analyzer.service.impl;
 
-import com.crimeLink.analyzer.dto.IssueWeaponRequestDTO;
-import com.crimeLink.analyzer.dto.ReturnWeaponRequestDTO;
-import com.crimeLink.analyzer.dto.WeaponAddDTO;
+import com.crimeLink.analyzer.dto.*;
 import com.crimeLink.analyzer.entity.User;
 import com.crimeLink.analyzer.entity.Weapon;
 import com.crimeLink.analyzer.entity.WeaponIssue;
@@ -11,106 +9,103 @@ import com.crimeLink.analyzer.repository.UserRepository;
 import com.crimeLink.analyzer.repository.WeaponIssueRepository;
 import com.crimeLink.analyzer.repository.WeaponRepository;
 import com.crimeLink.analyzer.service.WeaponIssueService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class WeaponIssueServiceImpl implements WeaponIssueService {
 
-    @Autowired
-    private WeaponRepository weaponRepository;
+    private final WeaponRepository weaponRepository;
+    private final WeaponIssueRepository weaponIssueRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private WeaponIssueRepository weaponIssueRepository;
     @Override
     public List<WeaponAddDTO> getAllActiveWeapons() {
+        List<Weapon> activeWeapons = weaponRepository.findByStatus(WeaponStatus.ISSUED);
 
-        List<Weapon> weapons =
-                weaponRepository.findByStatus(WeaponStatus.AVAILABLE);
-
-        List<WeaponAddDTO> weaponDTOList = new ArrayList<>();
-
-        for (Weapon weapon : weapons) {
-
-            WeaponAddDTO dto = new WeaponAddDTO();
-            dto.setSerialNumber(weapon.getSerialNumber());
-            dto.setWeaponType(weapon.getWeaponType());
-//            dto.setStatus(weapon.getStatus());
-//            dto.setRegisterDate(weapon.getRegisterDate());
-
-            weaponDTOList.add(dto);
-        }
-
-        return weaponDTOList;
-    }
-
-    @Override
-    public List<WeaponAddDTO> getAvailableWeapons() {
-        return weaponRepository.findByStatus(WeaponStatus.AVAILABLE)
-                .stream()
+        return activeWeapons.stream()
                 .map(weapon -> {
                     WeaponAddDTO dto = new WeaponAddDTO();
                     dto.setSerialNumber(weapon.getSerialNumber());
                     dto.setWeaponType(weapon.getWeaponType());
-//                    dto.setStatus(weapon.getStatus());
+                    dto.setRemarks(weapon.getRemarks());
                     return dto;
                 })
-                .toList();
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<WeaponAddDTO> getAvailableWeapons() {
+        List<Weapon> availableWeapons = weaponRepository.findByStatus(WeaponStatus.AVAILABLE);
+
+        return availableWeapons.stream()
+                .map(weapon -> {
+                    WeaponAddDTO dto = new WeaponAddDTO();
+                    dto.setSerialNumber(weapon.getSerialNumber());
+                    dto.setWeaponType(weapon.getWeaponType());
+                    dto.setRemarks(weapon.getRemarks());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
     public void issueWeapon(IssueWeaponRequestDTO dto) {
-        Weapon weapon = weaponRepository.findById(dto.getWeaponSerial())
-                .orElseThrow(() -> new RuntimeException("Weapon not found"));
+        Weapon weapon = weaponRepository
+                .findBySerialNumber(dto.getWeaponSerial())
+                .orElseThrow(() -> new RuntimeException("Weapon not found with serial: " + dto.getWeaponSerial()));
 
-        if (weapon.getStatus().equals(WeaponStatus.ISSUED)) {
-            throw new RuntimeException("Weapon already issued");
+        if (weapon.getStatus() != WeaponStatus.AVAILABLE) {
+            throw new RuntimeException("Weapon is not available for issue. Current status: " + weapon.getStatus());
         }
 
+        User issuedTo = userRepository.findById(dto.getIssuedToId())
+                .orElseThrow(() -> new RuntimeException("Issued-to user not found with ID: " + dto.getIssuedToId()));
+
+        User handedOverBy = userRepository.findById(dto.getHandedOverById())
+                .orElseThrow(() -> new RuntimeException("Handed-over user not found with ID: " + dto.getHandedOverById()));
+
         WeaponIssue issue = new WeaponIssue();
-        issue.setWeaponSerial(dto.getWeaponSerial());
-        issue.setOfficerId(dto.getOfficerId());
-        issue.setIssuedDate(LocalDate.now());
-        issue.setIssuedTime(LocalTime.now());
+        issue.setWeapon(weapon);
+        issue.setIssuedTo(issuedTo);
+        issue.setHandedOverBy(handedOverBy);
+        issue.setIssuedAt(LocalDateTime.now());
         issue.setDueDate(dto.getDueDate());
         issue.setIssueNote(dto.getIssueNote());
         issue.setStatus(WeaponStatus.ISSUED);
 
-        weaponIssueRepository.save(issue);
-
         weapon.setStatus(WeaponStatus.ISSUED);
+
+        weaponIssueRepository.save(issue);
         weaponRepository.save(weapon);
     }
 
     @Override
     public void returnWeapon(ReturnWeaponRequestDTO dto) {
+        Weapon weapon = weaponRepository
+                .findBySerialNumber(dto.getWeaponSerial())
+                .orElseThrow(() -> new RuntimeException("Weapon not found with serial: " + dto.getWeaponSerial()));
 
         WeaponIssue issue = weaponIssueRepository
-                .findByWeapon_SerialNumberAndStatus(dto.getWeaponSerial(), WeaponStatus.ISSUED)
-                .orElseThrow(() -> new RuntimeException("Issued record not found"));
+                .findByWeapon_SerialNumberAndReturnedAtIsNull(weapon.getSerialNumber())
+                .orElseThrow(() -> new RuntimeException("No active issue found for this weapon"));
 
         User receivedBy = userRepository.findById(dto.getReceivedByUserId())
-                .orElseThrow(() -> new RuntimeException("Receiving officer not found"));
+                .orElseThrow(() -> new RuntimeException("Receiving user not found with ID: " + dto.getReceivedByUserId()));
 
+        issue.setReturnedAt(LocalDateTime.now());
         issue.setReceivedBy(receivedBy);
-        issue.setReturnedDate(LocalDate.now());
-        issue.setReturnedTime(LocalTime.now());
         issue.setReturnNote(dto.getReturnNote());
         issue.setStatus(WeaponStatus.AVAILABLE);
 
-        weaponIssueRepository.save(issue);
-
-        Weapon weapon = issue.getWeapon();
         weapon.setStatus(WeaponStatus.AVAILABLE);
+
+        weaponIssueRepository.save(issue);
         weaponRepository.save(weapon);
     }
-
 }

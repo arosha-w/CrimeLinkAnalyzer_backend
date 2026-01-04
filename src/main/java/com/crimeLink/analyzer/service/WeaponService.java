@@ -6,13 +6,9 @@ import com.crimeLink.analyzer.entity.Weapon;
 
 import java.util.List;
 
-
 public interface WeaponService {
     Weapon addWeapon(WeaponAddDTO dto);
-
     Weapon updateWeapon(String serialNumber, WeaponUpdateDTO dto);
-
     List<Weapon> getAllWeapons();
-
-
+    Weapon getWeaponBySerial(String serialNumber);
 }

@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class ReturnWeaponRequestDTO {
-
-    private Integer issueId;
+    private String weaponSerial;
+    private Integer receivedByUserId;
     private String returnNote;
 }

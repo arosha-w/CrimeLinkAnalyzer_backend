@@ -1,10 +1,12 @@
 package com.crimeLink.analyzer.entity;
 
-import com.crimeLink.analyzer.enums.WeaponIssueStatus;
+import com.crimeLink.analyzer.enums.WeaponStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "weapon_issues")
@@ -17,38 +19,33 @@ public class WeaponIssue {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer issueId;
 
-    /*  Weapon */
+    /* Weapon */
     @ManyToOne
     @JoinColumn(name = "weapon_serial", referencedColumnName = "serial_number")
     private Weapon weapon;
 
-    /*  ISSUED TO (uses the weapon) */
+    /* Issued to */
     @ManyToOne
-    @JoinColumn(name = "issued_to",referencedColumnName = "user_id")
+    @JoinColumn(name = "issued_to", referencedColumnName = "user_id")
     private User issuedTo;
 
-    /*  HANDED OVER BY (store / OIC) */
+    /* Handed over by */
     @ManyToOne
-    @JoinColumn(name = "handed_over_by",referencedColumnName = "user_id")
+    @JoinColumn(name = "handed_over_by", referencedColumnName = "user_id")
     private User handedOverBy;
 
-    /*  RECEIVED BY (return accepting officer) */
+    /* Received by */
     @ManyToOne
-    @JoinColumn(name = "received_by",referencedColumnName = "user_id")
+    @JoinColumn(name = "received_by", referencedColumnName = "user_id")
     private User receivedBy;
 
-    /*  Issue info */
-    private LocalDate issuedDate;
-    private String issuedTime;
+    private LocalDateTime issuedAt;
     private LocalDate dueDate;
-
-    /*  Return info */
-    private LocalDate returnedDate;
-    private String returnedTime;
+    private LocalDateTime returnedAt;
 
     private String issueNote;
     private String returnNote;
 
     @Enumerated(EnumType.STRING)
-    private WeaponIssueStatus status;
+    private WeaponStatus status;
 }
