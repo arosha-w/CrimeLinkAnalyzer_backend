@@ -33,6 +33,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
@@ -41,8 +42,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/database/**").permitAll()
                         .requestMatchers("/api/test").permitAll()
 
-                        // FIXED — Allow ALL duty schedule operations for OIC
+                        // Allow duty schedule operations for OIC
                         .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
+                        
+                        // Allow weapon operations for OIC
+                        .requestMatchers("/api/weapon/**").hasRole("OIC")
 
                         // Everything else authenticated
                         .anyRequest().authenticated()
