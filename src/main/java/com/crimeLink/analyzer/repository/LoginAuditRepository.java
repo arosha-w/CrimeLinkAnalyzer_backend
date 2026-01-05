@@ -12,4 +12,7 @@ public interface LoginAuditRepository extends JpaRepository<LoginAudit, Long> {
     List<LoginAudit> findByEmailOrderByLoginTimeDesc(String email);
     List<LoginAudit> findBySuccessFalseAndEmailAndLoginTimeAfter(String email, LocalDateTime after);
     long countBySuccessFalseAndEmailAndLoginTimeAfter(String email, LocalDateTime after);
+    long countByUserIdAndSuccessTrue(Integer userId);
+    long countBySuccessTrue();
+    long countBySuccessFalse();
 }

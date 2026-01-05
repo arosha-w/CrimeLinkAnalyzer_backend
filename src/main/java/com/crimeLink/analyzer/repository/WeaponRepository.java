@@ -13,4 +13,5 @@ public interface WeaponRepository extends JpaRepository<Weapon, String> {
     boolean existsById(String serialNumber);
     List<Weapon> findByStatus(WeaponStatus status);
     Optional<Weapon> findBySerialNumber(String serialNumber);
+    long countByStatus(WeaponStatus status);
 }

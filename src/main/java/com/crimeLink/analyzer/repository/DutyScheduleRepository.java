@@ -1,6 +1,7 @@
 package com.crimeLink.analyzer.repository;
 
 import com.crimeLink.analyzer.entity.DutySchedule;
+import com.crimeLink.analyzer.enums.DutyStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -34,4 +35,6 @@ public interface DutyScheduleRepository extends JpaRepository<DutySchedule, Long
             LocalDate start,
             LocalDate end
     );
+    
+    long countByStatus(DutyStatus status);
 }
