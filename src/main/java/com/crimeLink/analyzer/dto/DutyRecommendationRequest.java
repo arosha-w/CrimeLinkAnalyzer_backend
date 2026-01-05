@@ -8,6 +8,6 @@ import java.time.LocalDate;
 public class DutyRecommendationRequest {
     private LocalDate date;
     private String location;
-    private String timeRange;      // e.g. "06:00-21:00" (or optional)
-    private Integer requiredOfficers; // how many you want suggested
+    private String timeRange;
+    private Integer requiredOfficers;
 }

@@ -8,7 +8,7 @@ import java.time.LocalDate;
 public class DutyScheduleRequest {
     private Integer officerId;
     private LocalDate date;
-    private String timeRange;     // "06:00-21:00"
+    private String timeRange;
     private DutyStatus status;
     private String location;
     private String description;

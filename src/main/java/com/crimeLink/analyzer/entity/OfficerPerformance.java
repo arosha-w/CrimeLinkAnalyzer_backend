@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "officer_performance")
-@Getter
-@Setter
+
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -36,4 +36,5 @@ public class OfficerPerformance {
 
     @Column(name = "last_updated")
     private LocalDateTime lastUpdated;
+
 }
