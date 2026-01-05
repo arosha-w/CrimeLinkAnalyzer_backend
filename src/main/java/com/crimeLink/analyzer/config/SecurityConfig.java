@@ -47,8 +47,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/database/**").permitAll()
                         .requestMatchers("/api/test").permitAll()
                         .requestMatchers("/api/vehicles/**").permitAll()
-                        // FIXED — Allow ALL duty schedule operations for OIC
+
+                        // Allow duty schedule operations for OIC
                         .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
+                        
+                        // Allow weapon operations for OIC
+                        .requestMatchers("/api/weapon/**").hasRole("OIC")
+
+                        // Everything else authenticated
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
