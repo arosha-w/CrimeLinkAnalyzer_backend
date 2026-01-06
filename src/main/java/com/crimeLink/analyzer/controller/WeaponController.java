@@ -1,6 +1,7 @@
 package com.crimeLink.analyzer.controller;
 
 import com.crimeLink.analyzer.dto.WeaponAddDTO;
+import com.crimeLink.analyzer.dto.WeaponResponseDTO;
 import com.crimeLink.analyzer.dto.WeaponUpdateDTO;
 import com.crimeLink.analyzer.entity.Weapon;
 import com.crimeLink.analyzer.service.WeaponService;
@@ -59,6 +60,17 @@ public class WeaponController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Failed to fetch weapons"));
+        }
+    }
+
+    @GetMapping("/all-with-details")
+    public ResponseEntity<?> getAllWeaponsWithDetails() {
+        try {
+            List<WeaponResponseDTO> weapons = weaponService.getAllWeaponsWithDetails();
+            return ResponseEntity.ok(weapons);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Failed to fetch weapons with details"));
         }
     }
 
