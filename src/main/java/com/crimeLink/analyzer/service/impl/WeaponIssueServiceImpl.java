@@ -101,7 +101,6 @@ public class WeaponIssueServiceImpl implements WeaponIssueService {
         issue.setReturnedAt(LocalDateTime.now());
         issue.setReceivedBy(receivedBy);
         issue.setReturnNote(dto.getReturnNote());
-        issue.setStatus(WeaponStatus.AVAILABLE);
 
         weapon.setStatus(WeaponStatus.AVAILABLE);
 

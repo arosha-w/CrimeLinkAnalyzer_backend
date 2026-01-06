@@ -76,11 +76,11 @@ public class WeaponServiceImpl implements WeaponService {
 
                     // If weapon is issued, get issue details
                     if (weapon.getStatus() == WeaponStatus.ISSUED) {
-                        Optional<WeaponIssue> issueOpt = weaponIssueRepository
-                                .findByWeapon_SerialNumberAndReturnedAtIsNull(weapon.getSerialNumber());
+                        List<WeaponIssue> issues = weaponIssueRepository
+                                .findByWeapon_SerialNumberAndReturnedAtIsNullOrderByIssuedAtDesc(weapon.getSerialNumber());
 
-                        if (issueOpt.isPresent()) {
-                            WeaponIssue issue = issueOpt.get();
+                        if (!issues.isEmpty()) {
+                            WeaponIssue issue = issues.get(0); // Get the most recent issue
 
                             // Issued To Officer
                             if (issue.getIssuedTo() != null) {

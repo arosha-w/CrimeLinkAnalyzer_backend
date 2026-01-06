@@ -69,8 +69,9 @@ public class WeaponController {
             List<WeaponResponseDTO> weapons = weaponService.getAllWeaponsWithDetails();
             return ResponseEntity.ok(weapons);
         } catch (Exception e) {
+            e.printStackTrace();  // Log the full stack trace
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(createErrorResponse("Failed to fetch weapons with details"));
+                    .body(createErrorResponse("Failed to fetch weapons with details: " + e.getMessage()));
         }
     }
 
