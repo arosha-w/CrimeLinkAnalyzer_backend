@@ -47,6 +47,7 @@ public class SecurityConfig {
                         
                         // Allow weapon operations for OIC
                         .requestMatchers("/api/weapon/**").hasRole("OIC")
+                        .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
 
                         // Everything else authenticated
                         .anyRequest().authenticated()

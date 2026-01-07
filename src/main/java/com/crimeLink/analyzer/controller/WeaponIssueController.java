@@ -1,6 +1,7 @@
 package com.crimeLink.analyzer.controller;
 
 import com.crimeLink.analyzer.dto.IssueWeaponRequestDTO;
+import com.crimeLink.analyzer.dto.OfficerDTO;
 import com.crimeLink.analyzer.dto.ReturnWeaponRequestDTO;
 import com.crimeLink.analyzer.dto.WeaponAddDTO;
 import com.crimeLink.analyzer.service.WeaponIssueService;
@@ -68,6 +69,17 @@ public class WeaponIssueController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Failed to fetch available weapons"));
+        }
+    }
+
+    @GetMapping("/officers")
+    public ResponseEntity<?> getAllOfficers() {
+        try {
+            List<OfficerDTO> officers = weaponIssueService.getAllOfficers();
+            return ResponseEntity.ok(officers);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Failed to fetch officers"));
         }
     }
 

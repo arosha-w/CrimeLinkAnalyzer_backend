@@ -1,6 +1,6 @@
 package com.crimeLink.analyzer.controller;
 
-import com.crimeLink.analyzer.dto.WeaponRequestOfficerDTO;
+
 import com.crimeLink.analyzer.entity.User;
 import com.crimeLink.analyzer.service.UserService;
 import com.crimeLink.analyzer.service.WeaponIssueService;

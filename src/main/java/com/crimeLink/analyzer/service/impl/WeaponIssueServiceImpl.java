@@ -101,11 +101,30 @@ public class WeaponIssueServiceImpl implements WeaponIssueService {
         issue.setReturnedAt(LocalDateTime.now());
         issue.setReceivedBy(receivedBy);
         issue.setReturnNote(dto.getReturnNote());
-        issue.setStatus(WeaponStatus.AVAILABLE);
 
         weapon.setStatus(WeaponStatus.AVAILABLE);
 
         weaponIssueRepository.save(issue);
         weaponRepository.save(weapon);
+    }
+
+    @Override
+    public List<OfficerDTO> getAllOfficers() {
+        // Get all active users
+        List<User> users = userRepository.findByStatus("Active");
+
+        return users.stream()
+                .map(user -> {
+                    OfficerDTO dto = new OfficerDTO();
+                    dto.setId(user.getUserId());
+                    dto.setServiceId(user.getBadgeNo());
+                    dto.setName(user.getName());
+                    dto.setBadge(user.getBadgeNo());
+                    dto.setRole(user.getRole());
+                    dto.setRank(user.getRole());
+                    dto.setStatus(user.getStatus());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 }

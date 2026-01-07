@@ -1,6 +1,7 @@
 package com.crimeLink.analyzer.service;
 
 import com.crimeLink.analyzer.dto.WeaponAddDTO;
+import com.crimeLink.analyzer.dto.WeaponResponseDTO;
 import com.crimeLink.analyzer.dto.WeaponUpdateDTO;
 import com.crimeLink.analyzer.entity.Weapon;
 
@@ -11,4 +12,5 @@ public interface WeaponService {
     Weapon updateWeapon(String serialNumber, WeaponUpdateDTO dto);
     List<Weapon> getAllWeapons();
     Weapon getWeaponBySerial(String serialNumber);
+    List<WeaponResponseDTO> getAllWeaponsWithDetails();
 }
