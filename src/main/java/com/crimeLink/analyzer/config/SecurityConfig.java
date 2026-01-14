@@ -47,6 +47,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/database/**").permitAll()
                         .requestMatchers("/api/vehicles/**").permitAll()
                         .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
+                        .requestMatchers("/api/mobile/**").hasRole("FieldOfficer")
+                        .requestMatchers("/field/**").hasRole("FieldOfficer")
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
