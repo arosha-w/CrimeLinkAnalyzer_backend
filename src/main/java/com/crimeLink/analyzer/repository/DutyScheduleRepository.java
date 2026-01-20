@@ -21,6 +21,10 @@ public interface DutyScheduleRepository extends JpaRepository<DutySchedule, Long
             LocalDate start, LocalDate end
     );
 
+    List<DutySchedule> findByAssignedOfficer_UserId(Long officerId);
+
+    List<DutySchedule> findByDateAndAssignedOfficer_UserId(LocalDate date, Long officerId);
+
     List<DutySchedule> findByDate(LocalDate date);
     Optional<DutySchedule> findByDateAndAssignedOfficer_UserId(
             LocalDate date,
