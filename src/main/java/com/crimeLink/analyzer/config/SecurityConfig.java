@@ -3,6 +3,7 @@ package com.crimeLink.analyzer.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -42,6 +43,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers("/api/admin/health").permitAll()
@@ -58,6 +60,8 @@ public class SecurityConfig {
                         // Allow weapon operations for OIC
                         .requestMatchers("/api/weapon/**").hasRole("OIC")
                         .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
+                        .requestMatchers("/api/duties/**").permitAll()
+                        .requestMatchers("/duties/**").permitAll()
 
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
