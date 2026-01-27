@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 // CRITICAL FIX: Enable CORS using the bean configuration
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
@@ -51,6 +52,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/mobile/auth/**").permitAll()
                         .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
                         .requestMatchers("/api/mobile/**").hasRole("FieldOfficer")
+                        .requestMatchers("/api/test").permitAll()
+                        .requestMatchers("/api/leaves/**").permitAll()
+
+                        // Allow duty schedule operations for OIC
+                        .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
+
+                        // Allow weapon operations for OIC
+                        .requestMatchers("/api/weapon/**").hasRole("OIC")
+                        .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
                         .requestMatchers("/api/duties/**").permitAll()
                         .requestMatchers("/duties/**").permitAll()
 
