@@ -58,6 +58,10 @@ public class SecurityConfig {
                         // Allow duty schedule operations for OIC
                         .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
 
+
+                        // Allow duty schedule operations for OIC
+                        .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
+                        
                         // Allow weapon operations for OIC
                         .requestMatchers("/api/weapon/**").hasRole("OIC")
                         .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
