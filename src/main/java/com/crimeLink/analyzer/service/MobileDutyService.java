@@ -23,7 +23,7 @@ public class MobileDutyService {
         List<DutySchedule> duties = dutyScheduleRepository.findByAssignedOfficer_UserId(officerId);
 
         return duties.stream().map(d -> new DutyAssignmentDTO(
-                d.getId(), // ✅ now exists
+                d.getId(),
                 String.valueOf(d.getAssignedOfficer().getUserId()),
                 d.getAssignedOfficer().getName(),
                 d.getDate().toString(),
@@ -41,7 +41,7 @@ public class MobileDutyService {
         List<DutySchedule> duties = dutyScheduleRepository.findByDateAndAssignedOfficer_UserId(date, officerId);
 
         return duties.stream().map(d -> new DutyDetailDTO(
-                d.getId(), // ✅ now exists
+                d.getId(),
                 "General",
                 d.getLocation() != null ? d.getLocation() : "N/A",
                 d.getTimeRange() != null ? d.getTimeRange() : "N/A",

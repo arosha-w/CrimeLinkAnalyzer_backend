@@ -18,7 +18,6 @@ public class LeaveRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ✅ Officer / Field Officer = User
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -39,7 +38,6 @@ public class LeaveRequest {
     @Column(name = "response_reason", length = 500)
     private String responseReason;
 
-    // ✅ Admin / OIC who approved or denied
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "responded_by")
     private User respondedBy;
@@ -47,7 +45,6 @@ public class LeaveRequest {
     @Column(name = "responded_date")
     private LocalDateTime respondedDate;
 
-    // ✅ Automatically set requested_date
     @PrePersist
     protected void onCreate() {
         this.requestedDate = LocalDate.now();

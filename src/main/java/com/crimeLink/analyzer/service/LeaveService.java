@@ -29,13 +29,11 @@ public class LeaveService {
     @Transactional
     public LeaveRequestDTO submitLeaveRequest(LeaveSubmitRequest request) {
 
-        // Your request still sends officerId -> we treat it as userId
         Integer userId = toUserId(request.getOfficerId());
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Monthly limit check
         int month = request.getDate().getMonthValue();
         int year = request.getDate().getYear();
 
@@ -66,7 +64,6 @@ public class LeaveService {
     public List<LeaveRequestDTO> getOfficerLeaves(Long officerId) {
         Integer userId = toUserId(officerId);
 
-        // validate user exists
         userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -77,7 +74,7 @@ public class LeaveService {
     }
 
     public List<LeaveRequestDTO> getAllLeaveRequests(String month) {
-        // "YYYY-MM"
+
         String[] parts = month.split("-");
         int year = Integer.parseInt(parts[0]);
         int monthNum = Integer.parseInt(parts[1]);
@@ -123,8 +120,6 @@ public class LeaveService {
         LeaveRequest updated = leaveRequestRepository.save(leave);
         return toDTO(updated);
     }
-
-    // -------- helpers --------
 
     private Integer toUserId(Long id) {
         if (id == null) throw new RuntimeException("User id is required");
