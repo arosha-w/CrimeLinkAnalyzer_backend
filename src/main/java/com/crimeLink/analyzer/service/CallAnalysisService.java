@@ -2,14 +2,17 @@ package com.crimeLink.analyzer.service;
 
 import com.crimeLink.analyzer.dto.CallAnalysisResultDTO;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,8 +24,12 @@ public class CallAnalysisService {
 
     private final RestTemplate restTemplate;
 
-    public CallAnalysisService() {
-        this.restTemplate = new RestTemplate();
+    public CallAnalysisService(RestTemplateBuilder restTemplateBuilder) {
+        // Configure RestTemplate with timeouts for reliability
+        this.restTemplate = restTemplateBuilder
+                .connectTimeout(Duration.ofSeconds(5))   // 5s to establish connection
+                .readTimeout(Duration.ofSeconds(60))      // 60s for PDF processing (can be slow)
+                .build();
     }
 
     /**
