@@ -62,6 +62,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
                         .requestMatchers("/api/duties/**").permitAll()
                         .requestMatchers("/duties/**").permitAll()
+                        .requestMatchers("/api/crime-reports/map").permitAll()
 
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
