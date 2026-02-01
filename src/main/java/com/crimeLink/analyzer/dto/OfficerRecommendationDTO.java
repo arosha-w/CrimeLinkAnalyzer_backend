@@ -10,12 +10,12 @@ import java.time.LocalDate;
 public class OfficerRecommendationDTO {
     private Integer officerId;
     private String name;
-    private String badgeNo;             // if you have it in User
-    private Double recommendationScore; // 0–100
+    private String badgeNo;
+    private Double recommendationScore;
     private String availabilityStatus;
     private LocalDate lastDutyDate;
     private Integer totalDuties;
     private Boolean locationMatch;
-    private String reason;              // text explanation
+    private String reason;
 }
 

@@ -17,6 +17,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -33,14 +39,25 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                // CRITICAL FIX: Enable CORS using the bean configuration
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers("/api/admin/health").permitAll()
                         .requestMatchers("/api/database/**").permitAll()
+                        .requestMatchers("/api/vehicles/**").permitAll()
+                        .requestMatchers("/api/mobile/auth/**").permitAll()
+                        .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
+                        .requestMatchers("/api/mobile/**").hasRole("FieldOfficer")
                         .requestMatchers("/api/test").permitAll()
+                        .requestMatchers("/api/leaves/**").permitAll()
+
+                        // Allow duty schedule operations for OIC
+                        .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
+
 
                         // Allow duty schedule operations for OIC
                         .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
@@ -48,13 +65,12 @@ public class SecurityConfig {
                         // Allow weapon operations for OIC
                         .requestMatchers("/api/weapon/**").hasRole("OIC")
                         .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
+                        .requestMatchers("/api/duties/**").permitAll()
+                        .requestMatchers("/duties/**").permitAll()
 
-                        // Everything else authenticated
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -78,5 +94,29 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-}
 
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        // Use allowedOriginPatterns for wildcard support with credentials
+        // For production, replace with specific origins
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        // Or use specific origins (recommended for production):
+        // configuration.setAllowedOrigins(Arrays.asList(
+        // "http://localhost:5173",
+        // "http://localhost:3000",
+        // "https://yourdomain.com"
+        // ));
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
+    }
+}

@@ -10,6 +10,4 @@ public interface OfficerPerformanceRepository extends JpaRepository<OfficerPerfo
     // IMPORTANT: returns a LIST (no more NonUniqueResultException from single result)
     List<OfficerPerformance> findByOfficer_UserId(Integer userId);
 
-
-
 }
