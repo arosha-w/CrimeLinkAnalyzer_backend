@@ -11,6 +11,7 @@ import com.crimeLink.analyzer.repository.WeaponRepository;
 import com.crimeLink.analyzer.service.WeaponIssueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -55,7 +56,9 @@ public class WeaponIssueServiceImpl implements WeaponIssueService {
     }
 
     @Override
+    @Transactional
     public void issueWeapon(IssueWeaponRequestDTO dto) {
+        // Validate weapon
         Weapon weapon = weaponRepository
                 .findBySerialNumber(dto.getWeaponSerial())
                 .orElseThrow(() -> new RuntimeException("Weapon not found with serial: " + dto.getWeaponSerial()));
@@ -64,12 +67,14 @@ public class WeaponIssueServiceImpl implements WeaponIssueService {
             throw new RuntimeException("Weapon is not available for issue. Current status: " + weapon.getStatus());
         }
 
+        // Validate users
         User issuedTo = userRepository.findById(dto.getIssuedToId())
                 .orElseThrow(() -> new RuntimeException("Issued-to user not found with ID: " + dto.getIssuedToId()));
 
         User handedOverBy = userRepository.findById(dto.getHandedOverById())
                 .orElseThrow(() -> new RuntimeException("Handed-over user not found with ID: " + dto.getHandedOverById()));
 
+        // Create weapon issue
         WeaponIssue issue = new WeaponIssue();
         issue.setWeapon(weapon);
         issue.setIssuedTo(issuedTo);
@@ -79,31 +84,60 @@ public class WeaponIssueServiceImpl implements WeaponIssueService {
         issue.setIssueNote(dto.getIssueNote());
         issue.setStatus(WeaponStatus.ISSUED);
 
+        // ===== ADD BULLET INFORMATION IF PROVIDED =====
+        if (dto.getBulletType() != null && !dto.getBulletType().isEmpty()) {
+            issue.setBulletType(dto.getBulletType());
+            issue.setIssuedMagazines(dto.getNumberOfMagazines());
+            issue.setBulletRemarks(dto.getBulletRemarks());
+        }
+
+        // Update weapon status
         weapon.setStatus(WeaponStatus.ISSUED);
 
+        // Save
         weaponIssueRepository.save(issue);
         weaponRepository.save(weapon);
     }
 
     @Override
+    @Transactional
     public void returnWeapon(ReturnWeaponRequestDTO dto) {
+        // Find weapon
         Weapon weapon = weaponRepository
                 .findBySerialNumber(dto.getWeaponSerial())
                 .orElseThrow(() -> new RuntimeException("Weapon not found with serial: " + dto.getWeaponSerial()));
 
+        // Find active issue
         WeaponIssue issue = weaponIssueRepository
                 .findByWeapon_SerialNumberAndReturnedAtIsNull(weapon.getSerialNumber())
                 .orElseThrow(() -> new RuntimeException("No active issue found for this weapon"));
 
+        // Validate receiving user
         User receivedBy = userRepository.findById(dto.getReceivedByUserId())
                 .orElseThrow(() -> new RuntimeException("Receiving user not found with ID: " + dto.getReceivedByUserId()));
 
+        // Update return details
         issue.setReturnedAt(LocalDateTime.now());
         issue.setReceivedBy(receivedBy);
         issue.setReturnNote(dto.getReturnNote());
 
+        // ===== UPDATE BULLET RETURN INFORMATION IF PROVIDED =====
+        if (dto.getReturnedMagazines() != null) {
+            issue.setReturnedMagazines(dto.getReturnedMagazines());
+            issue.setUsedBullets(dto.getUsedBullets());
+            issue.setBulletCondition(dto.getBulletCondition());
+            
+            // Append bullet remarks if provided
+            if (dto.getBulletRemarks() != null && !dto.getBulletRemarks().isEmpty()) {
+                String existingRemarks = issue.getBulletRemarks() != null ? issue.getBulletRemarks() : "";
+                issue.setBulletRemarks(existingRemarks + "\n[Return] " + dto.getBulletRemarks());
+            }
+        }
+
+        // Update weapon status
         weapon.setStatus(WeaponStatus.AVAILABLE);
 
+        // Save
         weaponIssueRepository.save(issue);
         weaponRepository.save(weapon);
     }

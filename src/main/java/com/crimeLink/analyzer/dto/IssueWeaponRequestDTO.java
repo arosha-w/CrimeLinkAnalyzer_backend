@@ -10,4 +10,9 @@ public class IssueWeaponRequestDTO {
     private Integer handedOverById;
     private LocalDate dueDate;
     private String issueNote;
+
+       // Bullet details (optional - can issue weapon without bullets)
+    private String bulletType;
+    private Integer numberOfMagazines;
+    private String bulletRemarks;
 }
