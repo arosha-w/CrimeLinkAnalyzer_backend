@@ -56,13 +56,15 @@ public class SecurityConfig {
 
                         // Allow duty schedule operations for OIC
                         .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
-                        
+
                         // Allow weapon operations for OIC
                         .requestMatchers("/api/weapon/**").hasRole("OIC")
                         .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
                         .requestMatchers("/api/duties/**").permitAll()
                         .requestMatchers("/duties/**").permitAll()
                         .requestMatchers("/api/crime-reports/map").permitAll()
+                        .requestMatchers("/api/officers/me/**").hasRole("FieldOfficer")
+                        .requestMatchers("/api/admin/**").hasAnyRole("Admin", "OIC")
 
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
