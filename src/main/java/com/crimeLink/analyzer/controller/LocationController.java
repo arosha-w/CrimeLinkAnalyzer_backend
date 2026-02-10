@@ -27,7 +27,7 @@ public class LocationController {
 
     @PostMapping("/officers/me/locations/bulk")
     public void uploadMyLocations(@AuthenticationPrincipal User user, @RequestBody List<LocationPointDTO> points) {
-
+        System.out.println("Received locations: " + points.size()); // REMOVE: for testing
         if (user == null) {
             throw new RuntimeException("Unauthorized");
         }

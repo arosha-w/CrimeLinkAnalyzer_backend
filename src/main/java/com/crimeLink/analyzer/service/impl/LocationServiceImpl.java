@@ -38,7 +38,7 @@ public class LocationServiceImpl implements LocationService {
                     e.setProvider(p.provider());
 
                     try {
-                        e.setMeta(p.meta() == null ? null : mapper.writeValueAsString(p.meta()));
+                        e.setMeta(p.meta() == null ? null : mapper.valueToTree(p.meta()));
                     } catch (Exception er) {
                         e.setMeta(null);
                     }

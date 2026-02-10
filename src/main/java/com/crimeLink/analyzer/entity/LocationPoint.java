@@ -2,6 +2,11 @@ package com.crimeLink.analyzer.entity;
 
 import java.time.Instant;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -38,6 +43,7 @@ public class LocationPoint {
 
     private String provider;
 
-    @Column(columnDefinition = "jsonb")
-    private String meta;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "meta", columnDefinition = "jsonb")
+    private JsonNode meta;
 }
