@@ -59,6 +59,7 @@ public class SecurityConfig {
                         // Field Officer routes
                         .requestMatchers("/api/officers/me/**").hasRole("FieldOfficer")
                         .requestMatchers("/api/mobile/**").hasRole("FieldOfficer")
+                        .requestMatchers("/api/leaves/**").permitAll()
 
                         // OIC-only routes
                         .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
