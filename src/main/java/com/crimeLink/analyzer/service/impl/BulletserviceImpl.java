@@ -23,11 +23,21 @@ public class BulletserviceImpl implements BulletService {
     @Override
     @Transactional
     public Bullet addBullet(BulletAddDTO dto) {
+        if (dto.getBulletType() == null || dto.getBulletType().trim().isEmpty()) {
+            throw new RuntimeException("Bullet type is required");
+        }
+        if (dto.getNumberOfMagazines() == null || dto.getNumberOfMagazines() < 0) {
+            throw new RuntimeException("Number of magazines must be 0 or more");
+        }
+        if (bulletRepository.existsByBulletTypeIgnoreCase(dto.getBulletType().trim())) {
+            throw new RuntimeException("Bullet type already exists");
+        }
+
         Bullet bullet = new Bullet();
-        bullet.setBulletType(dto.getBulletType());
+        bullet.setBulletType(dto.getBulletType().trim());
         bullet.setNumberOfMagazines(dto.getNumberOfMagazines());
         bullet.setRemarks(dto.getRemarks());
-        
+
         return bulletRepository.save(bullet);
     }
 
@@ -37,7 +47,21 @@ public class BulletserviceImpl implements BulletService {
         Bullet bullet = bulletRepository.findById(bulletId)
                 .orElseThrow(() -> new RuntimeException("Bullet not found with ID: " + bulletId));
 
-        bullet.setBulletType(dto.getBulletType());
+        if (dto.getBulletType() == null || dto.getBulletType().trim().isEmpty()) {
+            throw new RuntimeException("Bullet type is required");
+        }
+        if (dto.getNumberOfMagazines() == null || dto.getNumberOfMagazines() < 0) {
+            throw new RuntimeException("Number of magazines must be 0 or more");
+        }
+
+        // if changing type -> check duplicates
+        String newType = dto.getBulletType().trim();
+        if (!bullet.getBulletType().equalsIgnoreCase(newType)
+                && bulletRepository.existsByBulletTypeIgnoreCase(newType)) {
+            throw new RuntimeException("Bullet type already exists");
+        }
+
+        bullet.setBulletType(newType);
         bullet.setNumberOfMagazines(dto.getNumberOfMagazines());
         bullet.setRemarks(dto.getRemarks());
 
@@ -51,8 +75,8 @@ public class BulletserviceImpl implements BulletService {
 
     @Override
     public List<BulletResponseDTO> getAllBulletsWithDetails() {
-        List<Bullet> bullets = bulletRepository.findAll();
-        return bullets.stream()
+        return bulletRepository.findAll()
+                .stream()
                 .map(this::convertToBulletResponseDTO)
                 .collect(Collectors.toList());
     }
@@ -74,7 +98,6 @@ public class BulletserviceImpl implements BulletService {
         if (bullet.getRegisterDate() != null) {
             dto.setRegisterDate(bullet.getRegisterDate().format(dateFormatter));
         }
-
         return dto;
     }
 }
