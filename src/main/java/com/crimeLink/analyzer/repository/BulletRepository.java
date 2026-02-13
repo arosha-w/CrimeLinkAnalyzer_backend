@@ -8,5 +8,8 @@ import java.util.Optional;
 
 @Repository
 public interface BulletRepository extends JpaRepository<Bullet, Integer> {
-    Optional<Bullet> findByBulletId(Integer bulletId);
+
+    Optional<Bullet> findByBulletType(String bulletType);
+
+    boolean existsByBulletTypeIgnoreCase(String bulletType);
 }
