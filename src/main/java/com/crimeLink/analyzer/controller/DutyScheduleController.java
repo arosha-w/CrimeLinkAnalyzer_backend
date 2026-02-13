@@ -34,6 +34,10 @@ public class DutyScheduleController {
         List<OfficerDutyRowDTO> rows = dutyService.getOfficerRowsForDate(date);
         return ResponseEntity.ok(rows);
     }
+    @GetMapping("/locations")
+    public ResponseEntity<List<String>> getDutyLocations() {
+        return ResponseEntity.ok(dutyService.getDutyLocations());
+    }
     // 2) Create / Save a duty (upsert via service.saveDuty)
     @PostMapping
     public ResponseEntity<?> createDuty(@RequestBody DutyScheduleRequest request) {

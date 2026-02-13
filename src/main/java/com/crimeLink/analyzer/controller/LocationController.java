@@ -1,7 +1,9 @@
 package com.crimeLink.analyzer.controller;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -45,10 +47,35 @@ public class LocationController {
 
     @GetMapping("/admin/officers/{officerBadgeNo}/locations")
     public Object history(
+            @AuthenticationPrincipal User user,
             @PathVariable String officerBadgeNo,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
+        System.out.println("📍 LocationController.history() called");
+        System.out.println("   Badge: " + officerBadgeNo);
+        System.out.println("   From: " + from + ", To: " + to);
+        System.out.println("   User: " + (user != null ? user.getEmail() : "NULL"));
+        System.out.println("   Role: " + (user != null ? user.getRole() : "NULL"));
+        System.out.println("   Authorities: " + (user != null ? user.getAuthorities() : "NULL"));
         return service.getHistory(officerBadgeNo, from, to);
+    }
+
+    @GetMapping("/debug/whoami")
+    public Map<String, Object> whoAmI(@AuthenticationPrincipal User user) {
+        Map<String, Object> info = new HashMap<>();
+        if (user != null) {
+            info.put("email", user.getEmail());
+            info.put("name", user.getName());
+            info.put("role", user.getRole());
+            info.put("authorities", user.getAuthorities().stream()
+                    .map(auth -> auth.getAuthority())
+                    .toList());
+            info.put("userId", user.getUserId());
+            info.put("badgeNo", user.getBadgeNo());
+        } else {
+            info.put("error", "No authenticated user");
+        }
+        return info;
     }
 
     @GetMapping("/admin/officers/{officerBadgeNo}/locations/last")
