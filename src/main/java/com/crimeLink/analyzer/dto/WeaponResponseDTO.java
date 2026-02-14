@@ -19,4 +19,8 @@ public class WeaponResponseDTO {
     private String issuedDate;
     private String dueDate;
     private String issueNote;
+
+     // Bullet details (if issued with bullets)
+    private String issuedBulletType;
+    private Integer issuedMagazines;
 }
