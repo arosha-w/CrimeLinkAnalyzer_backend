@@ -13,6 +13,9 @@ import java.util.Optional;
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
     Optional<RefreshToken> findByToken(String token);
+
+    @Query("SELECT rt FROM RefreshToken rt JOIN FETCH rt.user WHERE rt.token = ?1")
+    Optional<RefreshToken> findByTokenWithUser(String token);
     
     @Modifying
     @Query("DELETE FROM RefreshToken rt WHERE rt.expiryDate < ?1")
