@@ -5,6 +5,11 @@
 -- Created: December 11, 2025
 -- ====================================================================
 
+-- Enable required PostgreSQL extension for EXCLUDE constraints
+-- The btree_gist extension is required for using EXCLUDE constraints with equality operators
+-- This allows us to enforce "one primary photo per criminal" at the database level
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
 -- Drop existing tables if they exist (for clean setup)
 DROP TABLE IF EXISTS facial_recognition_logs CASCADE;
 DROP TABLE IF EXISTS suspect_photos CASCADE;

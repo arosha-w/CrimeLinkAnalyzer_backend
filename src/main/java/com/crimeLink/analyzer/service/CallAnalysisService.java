@@ -30,7 +30,7 @@ public class CallAnalysisService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${ml.call-analysis.url:http://localhost:5001}")
+    @Value("${python.call-analysis.url:http://localhost:5001}")
     private String callAnalysisServiceUrl;
 
     public CallAnalysisService(RestTemplate restTemplate) {
@@ -54,7 +54,18 @@ public class CallAnalysisService {
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("file", new ByteArrayResource(file.getBytes()) {
+            
+            // Extract file bytes with explicit error handling
+            byte[] fileBytes;
+            try {
+                fileBytes = file.getBytes();
+            } catch (IOException e) {
+                log.error("Failed to read file bytes from uploaded file '{}': {}", 
+                        file.getOriginalFilename(), e.getMessage());
+                throw new RuntimeException("Failed to read uploaded file contents", e);
+            }
+            
+            body.add("file", new ByteArrayResource(fileBytes) {
                 @Override
                 public String getFilename() {
                     return file.getOriginalFilename();
@@ -77,8 +88,8 @@ public class CallAnalysisService {
             log.error("Failed to communicate with call analysis service: {}", e.getMessage());
             throw new RuntimeException("Call analysis service unavailable: " + e.getMessage(), e);
         } catch (IOException e) {
-            log.error("Failed to process file: {}", e.getMessage());
-            throw new RuntimeException("Failed to process file: " + e.getMessage(), e);
+            log.error("Failed to process response from ML service: {}", e.getMessage());
+            throw new RuntimeException("Failed to process ML service response: " + e.getMessage(), e);
         }
     }
 
@@ -100,10 +111,21 @@ public class CallAnalysisService {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             
             for (MultipartFile file : files) {
-                body.add("files", new ByteArrayResource(file.getBytes()) {
+                // Extract file bytes with explicit error handling
+                byte[] fileBytes;
+                try {
+                    fileBytes = file.getBytes();
+                } catch (IOException e) {
+                    log.error("Failed to read file bytes from uploaded file '{}': {}", 
+                            file.getOriginalFilename(), e.getMessage());
+                    throw new RuntimeException("Failed to read uploaded file: " + file.getOriginalFilename(), e);
+                }
+                
+                final String originalFilename = file.getOriginalFilename();
+                body.add("files", new ByteArrayResource(fileBytes) {
                     @Override
                     public String getFilename() {
-                        return file.getOriginalFilename();
+                        return originalFilename;
                     }
                 });
             }

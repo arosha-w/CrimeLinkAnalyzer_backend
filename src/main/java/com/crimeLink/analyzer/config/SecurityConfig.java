@@ -48,6 +48,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/health").permitAll()
                         .requestMatchers("/api/facial/health").permitAll()  // ML service health check
                         .requestMatchers("/api/call-analysis/health").permitAll()  // ML service health check
+                        
+                        // ML Service endpoints - Investigator role only
+                        .requestMatchers("/api/call-analysis/**").hasRole("Investigator")
+                        .requestMatchers("/api/facial/**").hasRole("Investigator")
+                        
                         .requestMatchers("/api/database/**").permitAll()
                         .requestMatchers("/api/test").permitAll()
                         .requestMatchers("/api/debug/**").permitAll() // 🔍 Debug endpoints

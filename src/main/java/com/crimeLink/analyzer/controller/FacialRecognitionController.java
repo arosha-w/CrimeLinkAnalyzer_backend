@@ -56,16 +56,16 @@ public class FacialRecognitionController {
             log.info("Facial recognition analysis requested by user: {}", userId);
 
             // Validate image
-            if (image.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "No image provided"));
+            ResponseEntity<?> validationError = validateImageFile(image, 10 * 1024 * 1024); // 10MB
+            if (validationError != null) {
+                return validationError;
             }
 
-            // Validate file type
-            String contentType = image.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
+            // Validate threshold range
+            if (threshold != null && (threshold < 0 || threshold > 100)) {
+                log.warn("Validation failed: Threshold {} out of range [0-100]", threshold);
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid file type. Please upload an image."));
+                        .body(Map.of("error", "Threshold must be between 0 and 100"));
             }
 
             // Forward to ML service
@@ -102,16 +102,21 @@ public class FacialRecognitionController {
         try {
             log.info("Criminal registration requested: {} ({})", name, nic);
 
-            // Validate photo
-            if (photo.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "No photo provided"));
+            // Validate required text fields
+            ResponseEntity<?> nameValidation = validateRequiredText(name, "name");
+            if (nameValidation != null) {
+                return nameValidation;
             }
 
-            String contentType = photo.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid file type. Please upload an image."));
+            ResponseEntity<?> nicValidation = validateRequiredText(nic, "nic");
+            if (nicValidation != null) {
+                return nicValidation;
+            }
+
+            // Validate photo
+            ResponseEntity<?> photoValidation = validateImageFile(photo, 10 * 1024 * 1024); // 10MB
+            if (photoValidation != null) {
+                return photoValidation;
             }
 
             // Forward to ML service
@@ -180,6 +185,58 @@ public class FacialRecognitionController {
         } else {
             return ResponseEntity.status(503).body(health);
         }
+    }
+
+    /**
+     * Validate image file for facial recognition.
+     * Checks: file not empty, content type is image/*, file size within limit.
+     *
+     * @param file         The file to validate
+     * @param maxSizeBytes Maximum allowed file size in bytes
+     * @return ResponseEntity with error if validation fails, null if valid
+     */
+    private ResponseEntity<?> validateImageFile(MultipartFile file, long maxSizeBytes) {
+        if (file == null || file.isEmpty()) {
+            log.warn("Validation failed: Empty image file");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "No image provided"));
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            log.warn("Validation failed: Invalid content type '{}' for file '{}'", 
+                    contentType, file.getOriginalFilename());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Invalid file type. Please upload an image."));
+        }
+
+        long fileSize = file.getSize();
+        if (fileSize > maxSizeBytes) {
+            log.warn("Validation failed: Image size {} exceeds limit {} for file '{}'", 
+                    fileSize, maxSizeBytes, file.getOriginalFilename());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "File size exceeds maximum limit of " + 
+                            (maxSizeBytes / (1024 * 1024)) + "MB: " + file.getOriginalFilename()));
+        }
+
+        return null; // Validation passed
+    }
+
+    /**
+     * Validate required text field.
+     * Checks: not null, not blank after trimming.
+     *
+     * @param value     The value to validate
+     * @param fieldName Name of the field (for error message)
+     * @return ResponseEntity with error if validation fails, null if valid
+     */
+    private ResponseEntity<?> validateRequiredText(String value, String fieldName) {
+        if (value == null || value.trim().isEmpty()) {
+            log.warn("Validation failed: Required field '{}' is missing or empty", fieldName);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", fieldName + " is required"));
+        }
+        return null; // Validation passed
     }
 
     /**

@@ -30,7 +30,7 @@ public class FacialRecognitionService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${ml.facial-recognition.url:http://localhost:5002}")
+    @Value("${python.facial-recognition.url:http://localhost:5002}")
     private String facialRecognitionServiceUrl;
 
     public FacialRecognitionService(RestTemplate restTemplate) {
@@ -60,8 +60,17 @@ public class FacialRecognitionService {
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             
-            // Add image file
-            body.add("image", new ByteArrayResource(image.getBytes()) {
+            // Add image file with explicit error handling
+            byte[] imageBytes;
+            try {
+                imageBytes = image.getBytes();
+            } catch (IOException e) {
+                log.error("Failed to read image bytes from uploaded file '{}': {}", 
+                        image.getOriginalFilename(), e.getMessage());
+                throw new RuntimeException("Failed to read uploaded image contents", e);
+            }
+            
+            body.add("image", new ByteArrayResource(imageBytes) {
                 @Override
                 public String getFilename() {
                     return image.getOriginalFilename();
@@ -96,8 +105,8 @@ public class FacialRecognitionService {
             log.error("Failed to communicate with facial recognition service: {}", e.getMessage());
             throw new RuntimeException("Facial recognition service unavailable: " + e.getMessage(), e);
         } catch (IOException e) {
-            log.error("Failed to process image file: {}", e.getMessage());
-            throw new RuntimeException("Failed to process image: " + e.getMessage(), e);
+            log.error("Failed to process response from ML service: {}", e.getMessage());
+            throw new RuntimeException("Failed to process ML service response: " + e.getMessage(), e);
         }
     }
 
@@ -123,7 +132,17 @@ public class FacialRecognitionService {
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             
-            body.add("photo", new ByteArrayResource(photo.getBytes()) {
+            // Extract photo bytes with explicit error handling
+            byte[] photoBytes;
+            try {
+                photoBytes = photo.getBytes();
+            } catch (IOException e) {
+                log.error("Failed to read photo bytes from uploaded file '{}': {}", 
+                        photo.getOriginalFilename(), e.getMessage());
+                throw new RuntimeException("Failed to read uploaded photo contents", e);
+            }
+            
+            body.add("photo", new ByteArrayResource(photoBytes) {
                 @Override
                 public String getFilename() {
                     return photo.getOriginalFilename();
@@ -151,8 +170,8 @@ public class FacialRecognitionService {
             log.error("Failed to register criminal: {}", e.getMessage());
             throw new RuntimeException("Facial recognition service unavailable: " + e.getMessage(), e);
         } catch (IOException e) {
-            log.error("Failed to process photo file: {}", e.getMessage());
-            throw new RuntimeException("Failed to process photo: " + e.getMessage(), e);
+            log.error("Failed to process response from ML service: {}", e.getMessage());
+            throw new RuntimeException("Failed to process ML service response: " + e.getMessage(), e);
         }
     }
 

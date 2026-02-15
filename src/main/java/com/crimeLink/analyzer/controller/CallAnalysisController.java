@@ -47,15 +47,9 @@ public class CallAnalysisController {
             log.info("Call record analysis requested: {}", file.getOriginalFilename());
 
             // Validate file
-            if (file.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "No file provided"));
-            }
-
-            String contentType = file.getContentType();
-            if (contentType == null || !contentType.equals("application/pdf")) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid file type. Please upload a PDF file."));
+            ResponseEntity<?> validationError = validatePdfFile(file, 10 * 1024 * 1024); // 10MB
+            if (validationError != null) {
+                return validationError;
             }
 
             // Forward to ML service
@@ -90,14 +84,9 @@ public class CallAnalysisController {
             }
 
             for (MultipartFile file : files) {
-                if (file.isEmpty()) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("error", "One or more files are empty"));
-                }
-                String contentType = file.getContentType();
-                if (contentType == null || !contentType.equals("application/pdf")) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("error", "Invalid file type: " + file.getOriginalFilename() + ". Only PDF files are allowed."));
+                ResponseEntity<?> validationError = validatePdfFile(file, 10 * 1024 * 1024); // 10MB
+                if (validationError != null) {
+                    return validationError;
                 }
             }
 
@@ -131,5 +120,41 @@ public class CallAnalysisController {
         } else {
             return ResponseEntity.status(503).body(health);
         }
+    }
+
+    /**
+     * Validate PDF file for call analysis.
+     * Checks: file not empty, content type is PDF, file size within limit.
+     *
+     * @param file         The file to validate
+     * @param maxSizeBytes Maximum allowed file size in bytes
+     * @return ResponseEntity with error if validation fails, null if valid
+     */
+    private ResponseEntity<?> validatePdfFile(MultipartFile file, long maxSizeBytes) {
+        if (file == null || file.isEmpty()) {
+            log.warn("Validation failed: Empty file");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "No file provided"));
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.equals("application/pdf")) {
+            log.warn("Validation failed: Invalid content type '{}' for file '{}'", 
+                    contentType, file.getOriginalFilename());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Invalid file type: " + file.getOriginalFilename() + 
+                            ". Only PDF files are allowed."));
+        }
+
+        long fileSize = file.getSize();
+        if (fileSize > maxSizeBytes) {
+            log.warn("Validation failed: File size {} exceeds limit {} for file '{}'", 
+                    fileSize, maxSizeBytes, file.getOriginalFilename());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "File size exceeds maximum limit of " + 
+                            (maxSizeBytes / (1024 * 1024)) + "MB: " + file.getOriginalFilename()));
+        }
+
+        return null; // Validation passed
     }
 }
