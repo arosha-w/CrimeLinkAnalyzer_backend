@@ -34,6 +34,21 @@ public class CallAnalysisController {
     private final CallAnalysisService callAnalysisService;
 
     /**
+     * Sanitize user-controlled strings for safe logging.
+     * Removes line breaks and control characters to prevent log injection.
+     *
+     * @param value the original string, possibly null
+     * @return sanitized string safe for logging, or null if input was null
+     */
+    private String sanitizeForLog(String value) {
+        if (value == null) {
+            return null;
+        }
+        // Replace CR and LF to prevent multi-line log injection
+        return value.replace('\r', ' ').replace('\n', ' ');
+    }
+
+    /**
      * Analyze a single call record PDF.
      *
      * @param file PDF file containing call records
@@ -44,7 +59,7 @@ public class CallAnalysisController {
             @RequestParam("file") MultipartFile file) {
         
         try {
-            log.info("Call record analysis requested: {}", file.getOriginalFilename());
+            log.info("Call record analysis requested: {}", sanitizeForLog(file.getOriginalFilename()));
 
             // Validate file
             ResponseEntity<?> validationError = validatePdfFile(file, 10 * 1024 * 1024); // 10MB
@@ -139,20 +154,23 @@ public class CallAnalysisController {
 
         String contentType = file.getContentType();
         if (contentType == null || !contentType.equals("application/pdf")) {
+            String safeContentType = contentType == null ? "null" : sanitizeForLog(contentType);
+            String safeFilename = sanitizeForLog(file.getOriginalFilename());
             log.warn("Validation failed: Invalid content type '{}' for file '{}'", 
-                    contentType, file.getOriginalFilename());
+                    safeContentType, safeFilename);
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Invalid file type: " + file.getOriginalFilename() + 
+                    .body(Map.of("error", "Invalid file type: " + safeFilename + 
                             ". Only PDF files are allowed."));
         }
 
         long fileSize = file.getSize();
         if (fileSize > maxSizeBytes) {
+            String safeFilename = sanitizeForLog(file.getOriginalFilename());
             log.warn("Validation failed: File size {} exceeds limit {} for file '{}'", 
-                    fileSize, maxSizeBytes, file.getOriginalFilename());
+                    fileSize, maxSizeBytes, safeFilename);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "File size exceeds maximum limit of " + 
-                            (maxSizeBytes / (1024 * 1024)) + "MB: " + file.getOriginalFilename()));
+                            (maxSizeBytes / (1024 * 1024)) + "MB: " + safeFilename));
         }
 
         return null; // Validation passed

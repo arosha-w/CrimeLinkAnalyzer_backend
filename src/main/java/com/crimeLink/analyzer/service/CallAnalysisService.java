@@ -117,7 +117,7 @@ public class CallAnalysisService {
                     fileBytes = file.getBytes();
                 } catch (IOException e) {
                     log.error("Failed to read file bytes from uploaded file '{}': {}", 
-                            file.getOriginalFilename(), e.getMessage());
+                            sanitizeForLog(file.getOriginalFilename()), e.getMessage());
                     throw new RuntimeException("Failed to read uploaded file: " + file.getOriginalFilename(), e);
                 }
                 
@@ -172,5 +172,20 @@ public class CallAnalysisService {
                     .put("status", "unhealthy")
                     .put("error", "Invalid response");
         }
+    }
+
+    /**
+     * Sanitize user-controlled strings for safe logging.
+     * Removes line breaks to prevent log injection attacks.
+     *
+     * @param value the original string, possibly null
+     * @return sanitized string safe for logging, or null if input was null
+     */
+    private String sanitizeForLog(String value) {
+        if (value == null) {
+            return null;
+        }
+        // Replace CR and LF to prevent multi-line log injection
+        return value.replace('\r', ' ').replace('\n', ' ');
     }
 }

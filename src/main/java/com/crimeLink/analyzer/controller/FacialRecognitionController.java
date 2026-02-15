@@ -100,7 +100,7 @@ public class FacialRecognitionController {
             @RequestParam(value = "risk_level", required = false, defaultValue = "medium") String riskLevel) {
         
         try {
-            log.info("Criminal registration requested: {} ({})", name, nic);
+            log.info("Criminal registration requested: {} ({})", sanitizeForLog(name), sanitizeForLog(nic));
 
             // Validate required text fields
             ResponseEntity<?> nameValidation = validateRequiredText(name, "name");
@@ -220,6 +220,21 @@ public class FacialRecognitionController {
         }
 
         return null; // Validation passed
+    }
+
+    /**
+     * Sanitize user-controlled strings for safe logging.
+     * Removes line breaks to prevent log injection attacks.
+     *
+     * @param value the original string, possibly null
+     * @return sanitized string safe for logging, or null if input was null
+     */
+    private String sanitizeForLog(String value) {
+        if (value == null) {
+            return null;
+        }
+        // Replace CR and LF to prevent multi-line log injection
+        return value.replace('\r', ' ').replace('\n', ' ');
     }
 
     /**

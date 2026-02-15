@@ -39,6 +39,21 @@ public class FacialRecognitionService {
     }
 
     /**
+     * Sanitize user-controlled strings for safe logging.
+     * Removes line breaks to prevent log injection attacks.
+     *
+     * @param value the original string, possibly null
+     * @return sanitized string safe for logging, or null if input was null
+     */
+    private String sanitizeForLog(String value) {
+        if (value == null) {
+            return null;
+        }
+        // Replace CR and LF to prevent multi-line log injection
+        return value.replace('\r', ' ').replace('\n', ' ');
+    }
+
+    /**
      * Analyze a suspect image for facial recognition matches.
      * Forwards the request to Python ML service and returns the response.
      *
@@ -66,7 +81,7 @@ public class FacialRecognitionService {
                 imageBytes = image.getBytes();
             } catch (IOException e) {
                 log.error("Failed to read image bytes from uploaded file '{}': {}", 
-                        image.getOriginalFilename(), e.getMessage());
+                        sanitizeForLog(image.getOriginalFilename()), e.getMessage());
                 throw new RuntimeException("Failed to read uploaded image contents", e);
             }
             
@@ -122,7 +137,7 @@ public class FacialRecognitionService {
      */
     public JsonNode registerCriminal(MultipartFile photo, String criminalId, String name, 
                                       String nic, String riskLevel) {
-        log.info("Forwarding criminal registration to ML service: {} ({})", name, nic);
+        log.info("Forwarding criminal registration to ML service: {} ({})", sanitizeForLog(name), sanitizeForLog(nic));
         
         String url = facialRecognitionServiceUrl + "/register";
         
@@ -138,7 +153,7 @@ public class FacialRecognitionService {
                 photoBytes = photo.getBytes();
             } catch (IOException e) {
                 log.error("Failed to read photo bytes from uploaded file '{}': {}", 
-                        photo.getOriginalFilename(), e.getMessage());
+                        sanitizeForLog(photo.getOriginalFilename()), e.getMessage());
                 throw new RuntimeException("Failed to read uploaded photo contents", e);
             }
             
