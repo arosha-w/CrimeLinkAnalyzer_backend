@@ -46,6 +46,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers("/api/admin/health").permitAll()
+                        .requestMatchers("/api/facial/health").permitAll()  // ML service health check
+                        .requestMatchers("/api/call-analysis/health").permitAll()  // ML service health check
                         .requestMatchers("/api/database/**").permitAll()
                         .requestMatchers("/api/test").permitAll()
                         .requestMatchers("/api/debug/**").permitAll() // 🔍 Debug endpoints
