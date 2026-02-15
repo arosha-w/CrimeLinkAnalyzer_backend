@@ -1,114 +1,135 @@
 package com.crimeLink.analyzer.controller;
 
-import com.crimeLink.analyzer.dto.CallAnalysisResultDTO;
 import com.crimeLink.analyzer.service.CallAnalysisService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import com.fasterxml.jackson.databind.JsonNode;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
+/**
+ * REST Controller for Call Analysis operations.
+ * Acts as API Gateway layer, routing requests to the Python ML microservice.
+ * 
+ * Architecture Pattern: Hybrid Monolith + Microservices
+ * - Spring Boot handles authentication, authorization, and request routing
+ * - Python FastAPI handles ML inference (call record analysis, NLP)
+ * 
+ * Endpoints:
+ * - POST /api/call-analysis/analyze       - Analyze single call record PDF
+ * - POST /api/call-analysis/analyze/batch - Analyze multiple call record PDFs
+ * - GET  /api/call-analysis/health        - Check ML service health
+ */
 @RestController
-@RequestMapping("/api/investigator/call-analysis")
-@PreAuthorize("hasAnyRole('Investigator', 'OIC', 'Admin')")
+@RequestMapping("/api/call-analysis")
+@RequiredArgsConstructor
+@Slf4j
 public class CallAnalysisController {
 
-    @Autowired
-    private CallAnalysisService callAnalysisService;
+    private final CallAnalysisService callAnalysisService;
 
     /**
-     * Upload PDF file for call record analysis
+     * Analyze a single call record PDF.
+     *
      * @param file PDF file containing call records
-     * @return Analysis ID for tracking results
+     * @return Analysis results with crime indicators, entity graph, etc.
      */
-    @PostMapping("/upload")
-    public ResponseEntity<Map<String, Object>> uploadCallRecords(@RequestParam("file") MultipartFile file) {
+    @PostMapping("/analyze")
+    public ResponseEntity<?> analyzeCallRecord(
+            @RequestParam("file") MultipartFile file) {
+        
         try {
+            log.info("Call record analysis requested: {}", file.getOriginalFilename());
+
             // Validate file
             if (file.isEmpty()) {
-                Map<String, Object> error = new HashMap<>();
-                error.put("error", "No file provided");
-                return ResponseEntity.badRequest().body(error);
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "No file provided"));
             }
 
-            if (!file.getOriginalFilename().toLowerCase().endsWith(".pdf")) {
-                Map<String, Object> error = new HashMap<>();
-                error.put("error", "Only PDF files are supported");
-                return ResponseEntity.badRequest().body(error);
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.equals("application/pdf")) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid file type. Please upload a PDF file."));
             }
 
-            // Send to Python service
-            String analysisId = callAnalysisService.analyzeCallRecords(file);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("analysis_id", analysisId);
-            response.put("status", "processing");
-            response.put("message", "Analysis started successfully");
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Failed to process file: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        }
-    }
-
-    /**
-     * Get analysis results by ID
-     * @param analysisId Analysis ID returned from upload
-     * @return Complete analysis results including network graph and criminal matches
-     */
-    @GetMapping("/results/{analysisId}")
-    public ResponseEntity<CallAnalysisResultDTO> getAnalysisResults(@PathVariable String analysisId) {
-        try {
-            CallAnalysisResultDTO result = callAnalysisService.getAnalysisResults(analysisId);
-
-            if (result == null) {
-                return ResponseEntity.notFound().build();
-            }
-
+            // Forward to ML service
+            JsonNode result = callAnalysisService.analyzeCallRecord(file);
+            
             return ResponseEntity.ok(result);
 
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (RuntimeException e) {
+            log.error("Call record analysis failed: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
     /**
-     * Get all analysis history
-     * @return List of all analyses
+     * Analyze multiple call record PDFs in batch.
+     *
+     * @param files Array of PDF files containing call records
+     * @return Batch analysis results
      */
-    @GetMapping("/history")
-    public ResponseEntity<Map<String, Object>> getAnalysisHistory() {
+    @PostMapping("/analyze/batch")
+    public ResponseEntity<?> analyzeBatch(
+            @RequestParam("files") MultipartFile[] files) {
+        
         try {
-            Map<String, Object> history = callAnalysisService.getAllAnalyses();
-            return ResponseEntity.ok(history);
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Failed to retrieve history: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+            log.info("Batch call analysis requested: {} files", files.length);
+
+            // Validate files
+            if (files.length == 0) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "No files provided"));
+            }
+
+            for (MultipartFile file : files) {
+                if (file.isEmpty()) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "One or more files are empty"));
+                }
+                String contentType = file.getContentType();
+                if (contentType == null || !contentType.equals("application/pdf")) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Invalid file type: " + file.getOriginalFilename() + ". Only PDF files are allowed."));
+                }
+            }
+
+            // Forward to ML service
+            List<MultipartFile> fileList = Arrays.asList(files);
+            JsonNode result = callAnalysisService.analyzeBatch(fileList);
+            
+            return ResponseEntity.ok(result);
+
+        } catch (RuntimeException e) {
+            log.error("Batch call analysis failed: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
     /**
-     * Check Python service health
-     * @return Health status of call analysis service
+     * Health check endpoint for the call analysis ML service.
+     * Public endpoint for monitoring.
+     *
+     * @return Health status
      */
     @GetMapping("/health")
-    public ResponseEntity<Map<String, Object>> checkServiceHealth() {
-        try {
-            Map<String, Object> health = callAnalysisService.checkPythonServiceHealth();
+    public ResponseEntity<?> checkHealth() {
+        JsonNode health = callAnalysisService.checkHealth();
+        
+        String status = health.has("status") ? health.get("status").asText() : "unknown";
+        
+        if ("healthy".equals(status) || "ok".equals(status)) {
             return ResponseEntity.ok(health);
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("status", "unhealthy");
-            error.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+        } else {
+            return ResponseEntity.status(503).body(health);
         }
     }
 }
