@@ -66,6 +66,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/weapon/**").hasRole("OIC")
                         .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
 
+                        // Chat routes (all authenticated users)
+                        .requestMatchers("/api/chat/**").authenticated()
+
                         // Admin/OIC routes (officer data, locations, users)
                         .requestMatchers("/api/users/field-officers").hasAnyRole("Admin", "OIC")
                         .requestMatchers("/api/admin/**").hasAnyRole("OIC", "Admin")
