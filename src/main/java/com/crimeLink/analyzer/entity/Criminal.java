@@ -1,6 +1,7 @@
 package com.crimeLink.analyzer.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "criminals")
@@ -27,6 +28,24 @@ public class Criminal {
 
     @Column(name = "status", length = 50)
     private String status;
+
+    @Column(name = "risk_level", length = 50)
+    private String riskLevel;
+
+    @Column(name = "crime_history", columnDefinition = "TEXT")
+    private String crimeHistory;
+
+    @Column(name = "primary_photo_url", length = 500)
+    private String primaryPhotoUrl;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    @Column(name = "gender", length = 10)
+    private String gender;
+
+    @Column(name = "alias", length = 255)
+    private String alias;
 
     // Constructors
     public Criminal() {}
@@ -86,5 +105,53 @@ public class Criminal {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getRiskLevel() {
+        return riskLevel;
+    }
+
+    public void setRiskLevel(String riskLevel) {
+        this.riskLevel = riskLevel;
+    }
+
+    public String getCrimeHistory() {
+        return crimeHistory;
+    }
+
+    public void setCrimeHistory(String crimeHistory) {
+        this.crimeHistory = crimeHistory;
+    }
+
+    public String getPrimaryPhotoUrl() {
+        return primaryPhotoUrl;
+    }
+
+    public void setPrimaryPhotoUrl(String primaryPhotoUrl) {
+        this.primaryPhotoUrl = primaryPhotoUrl;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
     }
 }

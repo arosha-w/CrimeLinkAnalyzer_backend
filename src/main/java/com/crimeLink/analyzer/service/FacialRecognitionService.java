@@ -122,7 +122,9 @@ public class FacialRecognitionService {
      * @return JSON response from ML service
      */
     public JsonNode registerCriminal(MultipartFile photo, String criminalId, String name, 
-                                      String nic, String riskLevel) {
+                                      String nic, String riskLevel, String crimeHistory,
+                                      String address, String contactNumber, String secondaryContact,
+                                      String dateOfBirth, String gender, String alias, String status) {
         log.info("Forwarding criminal registration to ML service: {} ({})", LogSanitizer.sanitize(name), LogSanitizer.sanitize(nic));
         
         String url = facialRecognitionServiceUrl + "/register";
@@ -143,7 +145,7 @@ public class FacialRecognitionService {
                 throw new RuntimeException("Failed to read uploaded photo contents", e);
             }
             
-            body.add("photo", new ByteArrayResource(photoBytes) {
+            body.add("photos", new ByteArrayResource(photoBytes) {
                 @Override
                 public String getFilename() {
                     return photo.getOriginalFilename();
@@ -154,6 +156,14 @@ public class FacialRecognitionService {
             body.add("name", name);
             body.add("nic", nic);
             if (riskLevel != null) body.add("risk_level", riskLevel);
+            if (crimeHistory != null) body.add("crime_history", crimeHistory);
+            if (address != null) body.add("address", address);
+            if (contactNumber != null) body.add("contact_number", contactNumber);
+            if (secondaryContact != null) body.add("secondary_contact", secondaryContact);
+            if (dateOfBirth != null) body.add("date_of_birth", dateOfBirth);
+            if (gender != null) body.add("gender", gender);
+            if (alias != null) body.add("alias", alias);
+            if (status != null) body.add("status", status);
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
