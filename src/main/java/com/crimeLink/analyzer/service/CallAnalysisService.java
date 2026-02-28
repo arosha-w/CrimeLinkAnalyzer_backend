@@ -1,5 +1,6 @@
 package com.crimeLink.analyzer.service;
 
+import com.crimeLink.analyzer.util.LogSanitizer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +46,7 @@ public class CallAnalysisService {
      * @return JSON response with analysis results
      */
     public JsonNode analyzeCallRecord(MultipartFile file) {
-        log.info("Forwarding call record analysis to ML service: {}", file.getOriginalFilename());
+        log.info("Forwarding call record analysis to ML service: {}", LogSanitizer.sanitize(file.getOriginalFilename()));
         
         String url = callAnalysisServiceUrl + "/analyze";
         
@@ -61,7 +62,7 @@ public class CallAnalysisService {
                 fileBytes = file.getBytes();
             } catch (IOException e) {
                 log.error("Failed to read file bytes from uploaded file '{}': {}", 
-                        file.getOriginalFilename(), e.getMessage());
+                        LogSanitizer.sanitize(file.getOriginalFilename()), e.getMessage());
                 throw new RuntimeException("Failed to read uploaded file contents", e);
             }
             
@@ -117,7 +118,7 @@ public class CallAnalysisService {
                     fileBytes = file.getBytes();
                 } catch (IOException e) {
                     log.error("Failed to read file bytes from uploaded file '{}': {}", 
-                            sanitizeForLog(file.getOriginalFilename()), e.getMessage());
+                            LogSanitizer.sanitize(file.getOriginalFilename()), e.getMessage());
                     throw new RuntimeException("Failed to read uploaded file: " + file.getOriginalFilename(), e);
                 }
                 
@@ -174,18 +175,4 @@ public class CallAnalysisService {
         }
     }
 
-    /**
-     * Sanitize user-controlled strings for safe logging.
-     * Removes line breaks to prevent log injection attacks.
-     *
-     * @param value the original string, possibly null
-     * @return sanitized string safe for logging, or null if input was null
-     */
-    private String sanitizeForLog(String value) {
-        if (value == null) {
-            return null;
-        }
-        // Replace CR and LF to prevent multi-line log injection
-        return value.replace('\r', ' ').replace('\n', ' ');
-    }
 }

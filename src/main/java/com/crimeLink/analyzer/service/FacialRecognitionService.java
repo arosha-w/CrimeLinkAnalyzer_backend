@@ -1,5 +1,6 @@
 package com.crimeLink.analyzer.service;
 
+import com.crimeLink.analyzer.util.LogSanitizer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -39,21 +40,6 @@ public class FacialRecognitionService {
     }
 
     /**
-     * Sanitize user-controlled strings for safe logging.
-     * Removes line breaks to prevent log injection attacks.
-     *
-     * @param value the original string, possibly null
-     * @return sanitized string safe for logging, or null if input was null
-     */
-    private String sanitizeForLog(String value) {
-        if (value == null) {
-            return null;
-        }
-        // Replace CR and LF to prevent multi-line log injection
-        return value.replace('\r', ' ').replace('\n', ' ');
-    }
-
-    /**
      * Analyze a suspect image for facial recognition matches.
      * Forwards the request to Python ML service and returns the response.
      *
@@ -81,7 +67,7 @@ public class FacialRecognitionService {
                 imageBytes = image.getBytes();
             } catch (IOException e) {
                 log.error("Failed to read image bytes from uploaded file '{}': {}", 
-                        sanitizeForLog(image.getOriginalFilename()), e.getMessage());
+                        LogSanitizer.sanitize(image.getOriginalFilename()), e.getMessage());
                 throw new RuntimeException("Failed to read uploaded image contents", e);
             }
             
@@ -137,7 +123,7 @@ public class FacialRecognitionService {
      */
     public JsonNode registerCriminal(MultipartFile photo, String criminalId, String name, 
                                       String nic, String riskLevel) {
-        log.info("Forwarding criminal registration to ML service: {} ({})", sanitizeForLog(name), sanitizeForLog(nic));
+        log.info("Forwarding criminal registration to ML service: {} ({})", LogSanitizer.sanitize(name), LogSanitizer.sanitize(nic));
         
         String url = facialRecognitionServiceUrl + "/register";
         
@@ -153,7 +139,7 @@ public class FacialRecognitionService {
                 photoBytes = photo.getBytes();
             } catch (IOException e) {
                 log.error("Failed to read photo bytes from uploaded file '{}': {}", 
-                        sanitizeForLog(photo.getOriginalFilename()), e.getMessage());
+                        LogSanitizer.sanitize(photo.getOriginalFilename()), e.getMessage());
                 throw new RuntimeException("Failed to read uploaded photo contents", e);
             }
             

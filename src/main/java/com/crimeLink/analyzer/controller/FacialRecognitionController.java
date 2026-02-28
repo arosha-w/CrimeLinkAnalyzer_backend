@@ -1,6 +1,7 @@
 package com.crimeLink.analyzer.controller;
 
 import com.crimeLink.analyzer.service.FacialRecognitionService;
+import com.crimeLink.analyzer.util.LogSanitizer;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -100,7 +101,7 @@ public class FacialRecognitionController {
             @RequestParam(value = "risk_level", required = false, defaultValue = "medium") String riskLevel) {
         
         try {
-            log.info("Criminal registration requested: {} ({})", sanitizeForLog(name), sanitizeForLog(nic));
+            log.info("Criminal registration requested: {} ({})", LogSanitizer.sanitize(name), LogSanitizer.sanitize(nic));
 
             // Validate required text fields
             ResponseEntity<?> nameValidation = validateRequiredText(name, "name");
@@ -205,7 +206,7 @@ public class FacialRecognitionController {
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
             log.warn("Validation failed: Invalid content type '{}' for file '{}'", 
-                    contentType, file.getOriginalFilename());
+                    LogSanitizer.sanitize(contentType), LogSanitizer.sanitize(file.getOriginalFilename()));
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Invalid file type. Please upload an image."));
         }
@@ -213,28 +214,13 @@ public class FacialRecognitionController {
         long fileSize = file.getSize();
         if (fileSize > maxSizeBytes) {
             log.warn("Validation failed: Image size {} exceeds limit {} for file '{}'", 
-                    fileSize, maxSizeBytes, file.getOriginalFilename());
+                    fileSize, maxSizeBytes, LogSanitizer.sanitize(file.getOriginalFilename()));
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "File size exceeds maximum limit of " + 
                             (maxSizeBytes / (1024 * 1024)) + "MB: " + file.getOriginalFilename()));
         }
 
         return null; // Validation passed
-    }
-
-    /**
-     * Sanitize user-controlled strings for safe logging.
-     * Removes line breaks to prevent log injection attacks.
-     *
-     * @param value the original string, possibly null
-     * @return sanitized string safe for logging, or null if input was null
-     */
-    private String sanitizeForLog(String value) {
-        if (value == null) {
-            return null;
-        }
-        // Replace CR and LF to prevent multi-line log injection
-        return value.replace('\r', ' ').replace('\n', ' ');
     }
 
     /**
