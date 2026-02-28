@@ -73,8 +73,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/weapon/**").hasRole("OIC")
                         .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
 
-                        // Admin/OIC routes (officer data, locations, users)
-                        .requestMatchers("/api/users/field-officers").hasAnyRole("Admin", "OIC")
+                        // Admin/OIC/Investigator routes (officer data, locations, users)
+                        .requestMatchers("/api/users/field-officers").hasAnyRole("Admin", "OIC", "Investigator")
+                        .requestMatchers("/api/admin/officers/*/locations/**").hasAnyRole("Admin", "OIC", "Investigator")
                         .requestMatchers("/api/admin/**").hasAnyRole("OIC", "Admin")
 
                         .anyRequest().authenticated())
