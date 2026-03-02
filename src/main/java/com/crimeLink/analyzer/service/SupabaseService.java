@@ -15,10 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 @Service
-public class SupabaseService {
-    @Value("${supabase.url}")
     private String supabaseUrl;
 
     @Value("${supabase.service-key}")
@@ -28,12 +25,9 @@ public class SupabaseService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final String bucket = "crime-evidence";
-
     public String uploadFile(MultipartFile file) throws IOException {
         if (file.isEmpty()) {
             throw new RuntimeException("File is empty");
-        }
-
         if (file.getSize() > 10 * 1024 * 1024) {
             throw new RuntimeException("File size exceeds the limit of 10MB");
         }
