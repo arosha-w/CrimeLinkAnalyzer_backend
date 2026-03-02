@@ -20,9 +20,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpStatus;
 
 @Configuration
 @EnableWebSecurity
@@ -49,12 +51,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/database/**").permitAll()
                         .requestMatchers("/api/test").permitAll()
                         .requestMatchers("/api/debug/**").permitAll() // 🔍 Debug endpoints
+                        .requestMatchers("/error").permitAll() // Allow error page without auth
 
                         // Public endpoints
                         .requestMatchers("/api/vehicle**").permitAll()
                         .requestMatchers("/api/mobile/auth/**").permitAll()
                         .requestMatchers("/api/duties/**").permitAll()
                         .requestMatchers("/api/crime-reports/map").permitAll()
+                        .requestMatchers("/api/crime-reports/upload-evidence").authenticated()
 
                         // Field Officer routes
                         .requestMatchers("/api/officers/me/**").hasRole("FieldOfficer")
@@ -71,6 +75,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasAnyRole("OIC", "Admin")
 
                         .anyRequest().authenticated())
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"message\":\"Access denied\"}");
+                        }))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
