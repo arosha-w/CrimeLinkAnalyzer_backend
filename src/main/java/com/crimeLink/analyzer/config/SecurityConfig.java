@@ -58,7 +58,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/debug/**").permitAll() // 🔍 Debug endpoints
 
                         // Public endpoints
-                        .requestMatchers("/api/vehicle**").permitAll()
+                        .requestMatchers("/api/vehicles/**").permitAll()
                         .requestMatchers("/api/mobile/auth/**").permitAll()
                         .requestMatchers("/api/duties/**").permitAll()
                         .requestMatchers("/api/crime-reports/map").permitAll()
@@ -74,8 +74,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
 
                         // Admin/OIC routes (officer data, locations, users)
-                        .requestMatchers("/api/users/field-officers").hasAnyRole("Admin", "OIC")
-                        .requestMatchers("/api/admin/**").hasAnyRole("OIC", "Admin")
+                        .requestMatchers("/api/users/field-officers").hasAnyRole("Admin", "OIC", "FieldOfficer", "Investigator")
+                        .requestMatchers("/api/admin/**").hasAnyRole("OIC", "Admin","Investigator")
 
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
