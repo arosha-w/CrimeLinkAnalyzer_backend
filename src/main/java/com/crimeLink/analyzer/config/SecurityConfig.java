@@ -58,7 +58,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/mobile/auth/**").permitAll()
                         .requestMatchers("/api/duties/**").permitAll()
                         .requestMatchers("/api/crime-reports/map").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/crime-reports").permitAll()
                         .requestMatchers("/api/crime-reports/upload-evidence").authenticated()
+                        .requestMatchers("/api/crime-reports/**").hasAnyRole("OIC", "Admin")
 
                         // Field Officer routes
                         .requestMatchers("/api/officers/me/**").hasRole("FieldOfficer")
