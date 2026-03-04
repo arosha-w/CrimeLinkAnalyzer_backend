@@ -2,7 +2,6 @@ package com.crimeLink.analyzer.controller;
 
 import java.util.List;
 
-import org.apache.catalina.connector.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -17,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.crimeLink.analyzer.dto.CrimeLocationDTO;
 import com.crimeLink.analyzer.dto.CrimeReportDTO;
+import com.crimeLink.analyzer.dto.EvidenceDTO;
 import com.crimeLink.analyzer.service.CrimeReportService;
 import com.crimeLink.analyzer.service.SupabaseService;
 
@@ -62,16 +62,14 @@ public class CrimeReportController {
     }
 
     @GetMapping("/download/{reportId}")
-    public ResponseEntity<String> downloadEvidence(@PathVariable Long reportId) {
+    public ResponseEntity<List<EvidenceDTO>> downloadEvidence(@PathVariable Long reportId) {
         CrimeReportDTO report = crimeReportService.getCrimeReportById(reportId);
 
         if (report.getEvidences() == null || report.getEvidences().isEmpty()) {
-            return ResponseEntity.badRequest().body("No evidence Found");
+            return ResponseEntity.badRequest().build();
         }
 
-        String fileName = report.getEvidences().get(0).getFileName();
-        String evidenceUrl = supabaseService.getFileUrl(fileName);
-        return ResponseEntity.ok(evidenceUrl);
+        return ResponseEntity.ok(report.getEvidences());
     }
 
 }

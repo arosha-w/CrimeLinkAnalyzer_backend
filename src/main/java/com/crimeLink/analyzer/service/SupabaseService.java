@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Service
 public class SupabaseService {
     @Value("${supabase.url}")
@@ -22,6 +25,7 @@ public class SupabaseService {
     private String supabaseServiceKey;
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final String bucket = "crime-evidence";
 
@@ -63,6 +67,49 @@ public class SupabaseService {
         HttpEntity<String> request = new HttpEntity<>(body, headers);
 
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
-        return response.getBody();
+        String responseBody = response.getBody();
+
+        if (responseBody == null || responseBody.isBlank()) {
+            throw new RuntimeException("Supabase did not return a signed URL");
+        }
+
+        try {
+            JsonNode jsonNode = objectMapper.readTree(responseBody);
+            String signedUrlPath = null;
+
+            if (jsonNode.hasNonNull("signedURL")) {
+                signedUrlPath = jsonNode.get("signedURL").asText();
+            } else if (jsonNode.hasNonNull("signedUrl")) {
+                signedUrlPath = jsonNode.get("signedUrl").asText();
+            }
+
+            if (signedUrlPath == null || signedUrlPath.isBlank()) {
+                throw new RuntimeException("Supabase signed URL field is missing in response");
+            }
+
+            return toAbsoluteSignedUrl(signedUrlPath.trim());
+        } catch (IOException exception) {
+            throw new RuntimeException("Failed to parse Supabase signed URL response", exception);
+        }
+    }
+
+    private String toAbsoluteSignedUrl(String signedUrlPath) {
+        if (signedUrlPath.startsWith("http://") || signedUrlPath.startsWith("https://")) {
+            return signedUrlPath;
+        }
+
+        String normalizedSupabaseUrl = supabaseUrl.endsWith("/")
+                ? supabaseUrl.substring(0, supabaseUrl.length() - 1)
+                : supabaseUrl;
+
+        if (signedUrlPath.startsWith("/storage/v1/")) {
+            return normalizedSupabaseUrl + signedUrlPath;
+        }
+
+        if (signedUrlPath.startsWith("/")) {
+            return normalizedSupabaseUrl + "/storage/v1" + signedUrlPath;
+        }
+
+        return normalizedSupabaseUrl + "/storage/v1/" + signedUrlPath;
     }
 }

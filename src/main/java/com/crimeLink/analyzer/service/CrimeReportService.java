@@ -9,6 +9,7 @@ import com.crimeLink.analyzer.dto.CrimeLocationDTO;
 import com.crimeLink.analyzer.dto.CrimeReportDTO;
 import com.crimeLink.analyzer.dto.EvidenceDTO;
 import com.crimeLink.analyzer.entity.CrimeReport;
+import com.crimeLink.analyzer.entity.Evidence;
 import com.crimeLink.analyzer.mapper.CrimeReportMapper;
 import com.crimeLink.analyzer.repository.CrimeReportRepository;
 
@@ -43,6 +44,21 @@ public class CrimeReportService {
 
         CrimeReport report = CrimeReportMapper.mapToCrimeReport(reportDTO);
         CrimeReport savedReport = crimeReportRepository.save(report);
+
+        if (reportDTO.getEvidences() != null) {
+            List<Evidence> evidences = reportDTO.getEvidences().stream()
+            .map(e -> {
+                Evidence evidence = new Evidence();
+                evidence.setFileName(e.getFileName());
+                evidence.setFileType(e.getFileType());
+                evidence.setFileSize(e.getFileSize());
+                evidence.setCrimeReport(savedReport);
+                return evidence;
+            }).collect(Collectors.toList());
+            savedReport.setEvidences(evidences);
+            crimeReportRepository.save(savedReport);
+        }
+
         return CrimeReportMapper.mapToCrimeReportDTO(savedReport);
     }
 
