@@ -12,7 +12,7 @@ public class WeaponRequestMapper {
         WeaponRequestDto dto = new WeaponRequestDto();
 
         dto.setRequestId(entity.getRequestId());
-        dto.setWeaponSerial(entity.getWeaponSerial());
+        dto.setWeaponSerial(entity.getWeapon().getSerialNumber());
         dto.setRequestedById(entity.getRequestedBy().getUserId());
         dto.setRequestNote(entity.getRequestNote());
         dto.setStatus(entity.getStatus().name());

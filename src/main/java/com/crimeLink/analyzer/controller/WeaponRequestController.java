@@ -30,8 +30,8 @@ public class WeaponRequestController {
     }
 
     @GetMapping
-    public ResponseEntity<List<WeaponRequestDto>> getRequestsByUser(@PathVariable Integer userId) {
-        List<WeaponRequestDto> requests = weaponRequestService.getRequestsByUser(userId);
+    public ResponseEntity<List<WeaponRequestDto>> getAllRequests() {
+        List<WeaponRequestDto> requests = weaponRequestService.getAllRequests();
         return ResponseEntity.ok(requests);
     }
 

@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Service;
+
 import com.crimeLink.analyzer.dto.WeaponRequestDto;
 import com.crimeLink.analyzer.entity.User;
 import com.crimeLink.analyzer.entity.Weapon;
@@ -15,6 +17,10 @@ import com.crimeLink.analyzer.repository.WeaponRepository;
 import com.crimeLink.analyzer.repository.WeaponRequestRepository;
 import com.crimeLink.analyzer.service.WeaponRequestService;
 
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
 public class WeaponRequestServiceImpl implements WeaponRequestService {
 
     private final WeaponRequestRepository weaponRequestRepository;
