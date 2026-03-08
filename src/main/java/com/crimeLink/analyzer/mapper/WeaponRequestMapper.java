@@ -4,7 +4,6 @@ import com.crimeLink.analyzer.dto.WeaponRequestDto;
 import com.crimeLink.analyzer.entity.User;
 import com.crimeLink.analyzer.entity.Weapon;
 import com.crimeLink.analyzer.entity.WeaponRequest;
-import com.crimeLink.analyzer.entity.WeaponRequestStatus;
 
 public class WeaponRequestMapper {
     public static WeaponRequestDto mapToWeaponRequestDto(WeaponRequest entity) {
@@ -13,6 +12,7 @@ public class WeaponRequestMapper {
 
         dto.setRequestId(entity.getRequestId());
         dto.setWeaponSerial(entity.getWeapon().getSerialNumber());
+        dto.setAmmoCount(entity.getAmmoCount());
         dto.setRequestedById(entity.getRequestedBy().getUserId());
         dto.setRequestNote(entity.getRequestNote());
         dto.setStatus(entity.getStatus().name());
@@ -21,17 +21,14 @@ public class WeaponRequestMapper {
         return dto;
     }
 
-    public static WeaponRequest mapToWeaponRequest
-    (WeaponRequestDto dto, Weapon weapon, User user) {
+    public static WeaponRequest mapToWeaponRequest(WeaponRequestDto dto, Weapon weapon, User user) {
 
         WeaponRequest entity = new WeaponRequest();
-        
+
         entity.setWeapon(weapon);
         entity.setRequestedBy(user);
         entity.setRequestNote(dto.getRequestNote());
-        entity.setStatus(WeaponRequestStatus.valueOf(dto.getStatus()));
-        entity.setRequestedAt(dto.getRequestedAt());
-        entity.setResolvedAt(dto.getResolvedAt());
+        entity.setAmmoCount(dto.getAmmoCount());
         return entity;
     }
 }

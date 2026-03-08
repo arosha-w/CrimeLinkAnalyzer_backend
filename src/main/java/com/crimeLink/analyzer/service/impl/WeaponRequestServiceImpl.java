@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.crimeLink.analyzer.dto.WeaponRequestDto;
 import com.crimeLink.analyzer.entity.User;
@@ -29,11 +31,27 @@ public class WeaponRequestServiceImpl implements WeaponRequestService {
 
     @Override
     public WeaponRequestDto createRequest(WeaponRequestDto requestDto) {
-        Weapon weapon = weaponRepository.findById(requestDto.getWeaponSerial())
-                .orElseThrow(() -> new RuntimeException("Weapon not Found"));
+        if (requestDto == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required");
+        }
+
+        if (requestDto.getWeaponSerial() == null || requestDto.getWeaponSerial().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "weaponSerial is required");
+        }
+
+        if (requestDto.getRequestedById() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "requestedById is required");
+        }
+
+        if (requestDto.getAmmoCount() != null && requestDto.getAmmoCount() < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ammoCount cannot be negative");
+        }
+
+        Weapon weapon = weaponRepository.findBySerialNumber(requestDto.getWeaponSerial())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Weapon not found"));
 
         User user = userRepository.findById(requestDto.getRequestedById())
-                .orElseThrow(() -> new RuntimeException("User not Found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         WeaponRequest request = WeaponRequestMapper.mapToWeaponRequest(requestDto, weapon, user);
 
@@ -53,7 +71,7 @@ public class WeaponRequestServiceImpl implements WeaponRequestService {
     @Override
     public WeaponRequestDto approvedRequest(Integer requestId) {
         WeaponRequest request = weaponRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not Found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found"));
 
         request.setStatus(WeaponRequestStatus.APPROVED);
         request.setResolvedAt(LocalDateTime.now());
@@ -64,7 +82,7 @@ public class WeaponRequestServiceImpl implements WeaponRequestService {
     @Override
     public WeaponRequestDto rejectedRequest(Integer requestId) {
         WeaponRequest request = weaponRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not Found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found"));
 
         request.setStatus(WeaponRequestStatus.REJECTED);
         request.setResolvedAt(LocalDateTime.now());

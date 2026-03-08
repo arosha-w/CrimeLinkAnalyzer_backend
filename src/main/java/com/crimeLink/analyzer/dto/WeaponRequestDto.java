@@ -8,6 +8,7 @@ import lombok.Data;
 public class WeaponRequestDto {
     private Integer requestId;
     private String weaponSerial;
+    private Integer ammoCount;
     private Integer requestedById;
     private String requestNote;
     private String status;

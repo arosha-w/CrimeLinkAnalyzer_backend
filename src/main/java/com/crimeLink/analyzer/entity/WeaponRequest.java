@@ -36,6 +36,8 @@ public class WeaponRequest {
     @JoinColumn(name = "requested_by", referencedColumnName = "user_id")
     private User requestedBy;
 
+    private Integer ammoCount;
+
     private LocalDateTime requestedAt;
     private LocalDateTime resolvedAt;
     private String requestNote;
