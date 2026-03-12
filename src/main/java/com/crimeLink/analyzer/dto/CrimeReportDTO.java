@@ -2,6 +2,7 @@ package com.crimeLink.analyzer.dto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,4 +19,5 @@ public class CrimeReportDTO {
     private LocalDate dateReported;
     private LocalTime timeReported;
     private String crimeType;
+    private List<EvidenceDTO> evidences;
 }
