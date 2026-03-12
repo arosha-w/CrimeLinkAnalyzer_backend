@@ -18,4 +18,8 @@ public class UserService {
     public List<User> getFieldOfficers() {
         return repo.findByRole("FieldOfficer");
     }
+
+    public List<User> getAllOfficers() {
+        return repo.findAll();
+    }
 }
