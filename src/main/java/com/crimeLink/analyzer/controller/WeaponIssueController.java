@@ -17,7 +17,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/weapon")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class WeaponIssueController {
 
     private final WeaponIssueService weaponIssueService;

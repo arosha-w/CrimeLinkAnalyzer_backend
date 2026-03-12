@@ -17,7 +17,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/bullet")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class BulletController {
 
     private final BulletService bulletService;

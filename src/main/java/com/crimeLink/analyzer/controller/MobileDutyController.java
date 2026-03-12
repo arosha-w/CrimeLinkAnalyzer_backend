@@ -15,12 +15,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/duties")
 @RequiredArgsConstructor
-@CrossOrigin(
-        origins = "*",
-        methods = {RequestMethod.GET, RequestMethod.OPTIONS},
-        allowedHeaders = "*",
-        maxAge = 3600
-)
 public class MobileDutyController {
 
     private final MobileDutyService mobileDutyService;

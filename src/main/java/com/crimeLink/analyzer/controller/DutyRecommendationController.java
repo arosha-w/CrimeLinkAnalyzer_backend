@@ -9,8 +9,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/duty-recommendations")
-@CrossOrigin(origins = "*")
-
 public class DutyRecommendationController {
 
     private final DutyRecommendationService recommendationService;

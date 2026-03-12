@@ -16,7 +16,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/duty-schedules")
-@CrossOrigin(origins = "*")
 public class DutyScheduleController {
 
     private final DutyScheduleService dutyService;

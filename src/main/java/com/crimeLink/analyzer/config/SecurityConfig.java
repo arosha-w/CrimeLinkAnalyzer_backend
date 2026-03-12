@@ -1,9 +1,11 @@
 package com.crimeLink.analyzer.config;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -36,6 +38,9 @@ public class SecurityConfig {
 
     @Autowired
     private UserDetailsService userDetailsService;
+
+    @Value("${cors.allowed-origins:*}")
+    private String allowedOrigins;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -128,8 +133,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Use allowedOriginPatterns for wildcard support with credentials
-        // For production, replace with specific origins
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        // For production, replace with specific origins via CORS_ALLOWED_ORIGINS
+        configuration.setAllowedOriginPatterns(parseAllowedOrigins(allowedOrigins));
         // Or use specific origins (recommended for production):
         // configuration.setAllowedOrigins(Arrays.asList(
         // "http://localhost:5173",
@@ -147,5 +152,22 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
 
         return source;
+    }
+
+    private List<String> parseAllowedOrigins(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of("*");
+        }
+
+        String[] parts = raw.split(",");
+        List<String> origins = new ArrayList<>();
+        for (String part : parts) {
+            String origin = part.trim();
+            if (!origin.isEmpty()) {
+                origins.add(origin);
+            }
+        }
+
+        return origins.isEmpty() ? List.of("*") : origins;
     }
 }
