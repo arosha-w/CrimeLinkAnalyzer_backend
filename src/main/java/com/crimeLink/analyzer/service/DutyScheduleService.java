@@ -31,6 +31,10 @@ public class DutyScheduleService {
     private final UserRepository userRepo;
     private final OfficerPerformanceRepository performanceRepo;
 
+    private static final List<String> DEFAULT_DUTY_LOCATIONS = List.of(
+            "Matara", "Hakmana", "Weligama", "Akuressa"
+    );
+
     public DutyScheduleService(DutyScheduleRepository dutyRepo, UserRepository userRepo, OfficerPerformanceRepository performanceRepo) {
         this.dutyRepo = dutyRepo;
         this.userRepo = userRepo;
@@ -237,6 +241,10 @@ public class DutyScheduleService {
         perf.setLastUpdated(LocalDateTime.now());
 
         performanceRepo.save(perf);
+    }
+    public List<String> getDutyLocations() {
+        List<String> dbLocations = dutyRepo.findDistinctLocations();
+        return dbLocations.isEmpty() ? DEFAULT_DUTY_LOCATIONS : dbLocations;
     }
     // Range queries & PDF
     public List<DutySchedule> getDutiesBetween(LocalDate start, LocalDate end) {

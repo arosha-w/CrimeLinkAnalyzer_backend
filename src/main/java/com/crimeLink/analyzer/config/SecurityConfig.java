@@ -1,9 +1,13 @@
 package com.crimeLink.analyzer.config;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -16,13 +20,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -41,34 +43,54 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 // CRITICAL FIX: Enable CORS using the bean configuration
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers("/api/admin/health").permitAll()
+                        .requestMatchers("/api/facial/health").permitAll()  // ML service health check
+                        .requestMatchers("/api/call-analysis/health").permitAll()  // ML service health check
+                        
+                        // ML Service endpoints - Investigator role only
+                        .requestMatchers("/api/call-analysis/**").hasRole("Investigator")
+                        .requestMatchers("/api/facial/**").hasRole("Investigator")
+                        
                         .requestMatchers("/api/database/**").permitAll()
-                        .requestMatchers("/api/vehicles/**").permitAll()
-                        .requestMatchers("/api/mobile/auth/**").permitAll()
-                        .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
-                        .requestMatchers("/api/mobile/**").hasRole("FieldOfficer")
                         .requestMatchers("/api/test").permitAll()
+                        .requestMatchers("/api/debug/**").permitAll() // 🔍 Debug endpoints
+                        .requestMatchers("/error").permitAll() // Allow error page without auth
+
+                        // Public endpoints
+                        .requestMatchers("/api/vehicle**").permitAll()
+                        .requestMatchers("/api/mobile/auth/**").permitAll()
+                        .requestMatchers("/api/duties/**").permitAll()
+                        .requestMatchers("/api/crime-reports/map").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/crime-reports").permitAll()
+                        .requestMatchers("/api/crime-reports/upload-evidence").authenticated()
+                        .requestMatchers("/api/crime-reports/**").hasAnyRole("OIC", "Admin")
+
+                        // Field Officer routes
+                        .requestMatchers("/api/officers/me/**").hasRole("FieldOfficer")
+                        .requestMatchers("/api/mobile/**").hasRole("FieldOfficer")
                         .requestMatchers("/api/leaves/**").permitAll()
 
-                        // Allow duty schedule operations for OIC
+                        // OIC-only routes
                         .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
-
-
-                        // Allow duty schedule operations for OIC
-                        .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
-                        
-                        // Allow weapon operations for OIC
                         .requestMatchers("/api/weapon/**").hasRole("OIC")
                         .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
-                        .requestMatchers("/api/duties/**").permitAll()
-                        .requestMatchers("/duties/**").permitAll()
+
+                        // Admin/OIC routes (officer data, locations, users)
+                        .requestMatchers("/api/users/field-officers").hasAnyRole("Admin", "OIC")
+                        .requestMatchers("/api/admin/**").hasAnyRole("OIC", "Admin")
 
                         .anyRequest().authenticated())
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"message\":\"Access denied\"}");
+                        }))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())

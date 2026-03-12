@@ -2,6 +2,7 @@ package com.crimeLink.analyzer.repository;
 
 import com.crimeLink.analyzer.entity.DutySchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -38,4 +39,13 @@ public interface DutyScheduleRepository extends JpaRepository<DutySchedule, Long
             LocalDate start,
             LocalDate end
     );
+
+    @Query("""
+            SELECT DISTINCT d.location
+            FROM DutySchedule d
+            WHERE d.location IS NOT NULL
+              AND LENGTH(TRIM(d.location)) > 0
+            ORDER BY d.location
+            """)
+    List<String> findDistinctLocations();
 }

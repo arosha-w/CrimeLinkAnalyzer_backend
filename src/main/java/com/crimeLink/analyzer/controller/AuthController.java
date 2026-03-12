@@ -44,25 +44,34 @@ public class AuthController {
     public ResponseEntity<TokenRefreshResponse> refreshToken(@RequestBody TokenRefreshRequest request) {
         String refreshTokenStr = request.getRefreshToken();
 
-        return refreshTokenService.findByToken(refreshTokenStr)
-                .map(refreshTokenService::verifyExpiration)
-                .map(RefreshToken::getUser)
-                .map(user -> {
+        if (refreshTokenStr == null || refreshTokenStr.isBlank()) {
+            return ResponseEntity.badRequest().body(new TokenRefreshResponse(
+                    false,
+                    "Refresh token is required",
+                    null,
+                    null
+            ));
+        }
+
+        return refreshTokenService.findValidToken(refreshTokenStr)
+                .map(validToken -> {
+                    RefreshToken rotated = refreshTokenService.rotateRefreshToken(validToken);
+                    User user = rotated.getUser();
                     String accessToken = jwtService.generateToken(user);
+
                     return ResponseEntity.ok(new TokenRefreshResponse(
                             true,
                             "Token refreshed successfully",
                             accessToken,
-                            refreshTokenStr
+                            rotated.getToken()
                     ));
                 })
-                .orElseGet(() -> ResponseEntity.status(401)
-                        .body(new TokenRefreshResponse(
-                                false,
-                                "Invalid refresh token",
-                                null,
-                                null
-                        )));
+                .orElseGet(() -> ResponseEntity.status(401).body(new TokenRefreshResponse(
+                        false,
+                        "Invalid or expired refresh token",
+                        null,
+                        null
+                )));
     }
 
     @PostMapping("/logout")
