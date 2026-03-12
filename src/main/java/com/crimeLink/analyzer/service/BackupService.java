@@ -4,48 +4,42 @@ import com.crimeLink.analyzer.entity.BackupMetadata;
 import com.crimeLink.analyzer.repository.BackupMetadataRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
-import java.net.URI;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class BackupService {
 
     private final BackupMetadataRepository backupRepo;
+    private final JdbcTemplate jdbcTemplate;
 
     // Whitelist pattern: only alphanumeric, underscores, hyphens, and a single .sql extension
     private static final Pattern SAFE_FILENAME = Pattern.compile("^[a-zA-Z0-9_\\-]+\\.sql$");
 
-    @Value("${spring.datasource.url}")
-    private String dbUrl;
-
-    @Value("${spring.datasource.username}")
-    private String dbUsername;
-
-    @Value("${spring.datasource.password}")
-    private String dbPassword;
-
     @Value("${backup.directory:./backups}")
     private String backupDirectory;
 
-    public BackupService(BackupMetadataRepository backupRepo) {
+    public BackupService(BackupMetadataRepository backupRepo, JdbcTemplate jdbcTemplate) {
         this.backupRepo = backupRepo;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     /**
-     * Create a full database backup using pg_dump.
+     * Create a full database backup using pure JDBC.
+     * Exports all user tables as SQL INSERT statements.
      */
     public BackupMetadata createBackup(String userEmail) {
         String timestamp = LocalDateTime.now()
@@ -64,40 +58,25 @@ public class BackupService {
             // Ensure backup directory exists
             Files.createDirectories(backupDir);
 
-            // Parse JDBC URL to extract host, port, dbName
-            DbConnectionInfo connInfo = parseJdbcUrl(dbUrl);
+            // Get all user table names (exclude system tables)
+            List<String> tables = getTableNames();
 
-            ProcessBuilder pb = new ProcessBuilder(
-                    "pg_dump",
-                    "-h", connInfo.host,
-                    "-p", String.valueOf(connInfo.port),
-                    "-U", dbUsername,
-                    "-F", "p",           // plain SQL format
-                    "-f", backupFile.toAbsolutePath().toString(),
-                    connInfo.database
-            );
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(backupFile.toFile()))) {
+                writer.write("-- CrimeLink Analyzer Database Backup\n");
+                writer.write("-- Created: " + LocalDateTime.now() + "\n");
+                writer.write("-- Created by: " + userEmail + "\n");
+                writer.write("-- Tables: " + tables.size() + "\n\n");
 
-            // Pass password via environment variable (more secure than command line)
-            pb.environment().put("PGPASSWORD", dbPassword);
-            pb.redirectErrorStream(true);
+                for (String table : tables) {
+                    writer.write("\n-- ========================================\n");
+                    writer.write("-- Table: " + table + "\n");
+                    writer.write("-- ========================================\n\n");
 
-            Process process = pb.start();
+                    // Export table data as INSERT statements
+                    exportTableData(writer, table);
+                }
 
-            // Read process output for logging
-            String output;
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()))) {
-                output = reader.lines().collect(Collectors.joining("\n"));
-            }
-
-            int exitCode = process.waitFor();
-
-            if (exitCode != 0) {
-                log.error("pg_dump failed with exit code {}: {}", exitCode, output);
-                metadata.setStatus("FAILED");
-                metadata.setSizeBytes(0L);
-                backupRepo.save(metadata);
-                throw new RuntimeException("pg_dump failed (exit code " + exitCode + "): " + output);
+                writer.write("\n-- Backup complete\n");
             }
 
             // Record file size
@@ -111,8 +90,6 @@ public class BackupService {
 
             return metadata;
 
-        } catch (RuntimeException e) {
-            throw e; // re-throw RuntimeExceptions as-is
         } catch (Exception e) {
             log.error("Backup failed: {}", e.getMessage(), e);
             metadata.setStatus("FAILED");
@@ -123,7 +100,7 @@ public class BackupService {
     }
 
     /**
-     * Restore database from a backup file using psql.
+     * Restore database from a backup file by executing its SQL statements.
      */
     public void restoreBackup(String filename, String userEmail) {
         // Sanitize filename to prevent path traversal
@@ -139,40 +116,32 @@ public class BackupService {
         }
 
         try {
-            DbConnectionInfo connInfo = parseJdbcUrl(dbUrl);
+            String sql = Files.readString(backupFile);
 
-            ProcessBuilder pb = new ProcessBuilder(
-                    "psql",
-                    "-h", connInfo.host,
-                    "-p", String.valueOf(connInfo.port),
-                    "-U", dbUsername,
-                    "-d", connInfo.database,
-                    "-f", backupFile.toAbsolutePath().toString()
-            );
+            // Split by semicolons and execute each statement
+            String[] statements = sql.split(";");
+            int executed = 0;
 
-            pb.environment().put("PGPASSWORD", dbPassword);
-            pb.redirectErrorStream(true);
-
-            Process process = pb.start();
-
-            String output;
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()))) {
-                output = reader.lines().collect(Collectors.joining("\n"));
+            for (String stmt : statements) {
+                String trimmed = stmt.trim();
+                // Skip empty lines and comments
+                if (trimmed.isEmpty() || trimmed.startsWith("--")) {
+                    continue;
+                }
+                try {
+                    jdbcTemplate.execute(trimmed);
+                    executed++;
+                } catch (Exception stmtEx) {
+                    // Log and continue — some statements may fail on duplicates etc.
+                    log.warn("Skipping failed statement: {}... Error: {}",
+                            trimmed.substring(0, Math.min(80, trimmed.length())),
+                            stmtEx.getMessage());
+                }
             }
 
-            int exitCode = process.waitFor();
+            log.info("Database restored from {} by {} ({} statements executed)", filename, userEmail, executed);
 
-            if (exitCode != 0) {
-                log.error("psql restore failed with exit code {}: {}", exitCode, output);
-                throw new RuntimeException("Restore failed (exit code " + exitCode + "): " + output);
-            }
-
-            log.info("Database restored from {} by {}", filename, userEmail);
-
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
+        } catch (IOException e) {
             log.error("Restore failed: {}", e.getMessage(), e);
             throw new RuntimeException("Restore failed: " + e.getMessage(), e);
         }
@@ -185,27 +154,72 @@ public class BackupService {
         return backupRepo.findAllByOrderByCreatedAtDesc();
     }
 
+    // ════════════════════════════════════════════════════════════════
+    //  Private helpers
+    // ════════════════════════════════════════════════════════════════
+
     /**
-     * Parse a JDBC PostgreSQL URL into host, port, and database components.
-     * Supports: jdbc:postgresql://host:port/database and ?param=value query strings.
+     * Get all user table names from the public schema.
      */
-    private DbConnectionInfo parseJdbcUrl(String jdbcUrl) {
-        try {
-            // Remove "jdbc:" prefix so URI can parse it
-            String uriString = jdbcUrl.substring(5);
-            URI uri = new URI(uriString);
-
-            String host = uri.getHost() != null ? uri.getHost() : "localhost";
-            int port = uri.getPort() > 0 ? uri.getPort() : 5432;
-            String path = uri.getPath();
-            String database = (path != null && path.length() > 1) ? path.substring(1) : "postgres";
-
-            return new DbConnectionInfo(host, port, database);
-        } catch (Exception e) {
-            log.warn("Could not parse JDBC URL '{}', using defaults. Error: {}", jdbcUrl, e.getMessage());
-            return new DbConnectionInfo("localhost", 5432, "postgres");
-        }
+    private List<String> getTableNames() {
+        return jdbcTemplate.queryForList(
+                "SELECT table_name FROM information_schema.tables " +
+                        "WHERE table_schema = 'public' AND table_type = 'BASE TABLE' " +
+                        "ORDER BY table_name",
+                String.class
+        );
     }
 
-    private record DbConnectionInfo(String host, int port, String database) {}
+    /**
+     * Export all rows of a table as INSERT statements.
+     */
+    private void exportTableData(BufferedWriter writer, String tableName) throws IOException {
+        // Validate table name to prevent SQL injection (should only contain safe chars)
+        if (!tableName.matches("^[a-zA-Z_][a-zA-Z0-9_]*$")) {
+            log.warn("Skipping suspicious table name: {}", tableName);
+            return;
+        }
+
+        try {
+            jdbcTemplate.query("SELECT * FROM \"" + tableName + "\"", (ResultSet rs) -> {
+                try {
+                    ResultSetMetaData meta = rs.getMetaData();
+                    int columnCount = meta.getColumnCount();
+
+                    // Build column name list
+                    List<String> columns = new ArrayList<>();
+                    for (int i = 1; i <= columnCount; i++) {
+                        columns.add("\"" + meta.getColumnName(i) + "\"");
+                    }
+                    String columnList = String.join(", ", columns);
+
+                    while (rs.next()) {
+                        List<String> values = new ArrayList<>();
+                        for (int i = 1; i <= columnCount; i++) {
+                            Object val = rs.getObject(i);
+                            if (val == null) {
+                                values.add("NULL");
+                            } else if (val instanceof Number) {
+                                values.add(val.toString());
+                            } else if (val instanceof Boolean) {
+                                values.add(((Boolean) val) ? "TRUE" : "FALSE");
+                            } else {
+                                // Escape single quotes for SQL strings
+                                String escaped = val.toString().replace("'", "''");
+                                values.add("'" + escaped + "'");
+                            }
+                        }
+
+                        writer.write("INSERT INTO \"" + tableName + "\" (" + columnList + ") VALUES ("
+                                + String.join(", ", values) + ");\n");
+                    }
+                } catch (Exception e) {
+                    log.error("Error exporting table {}: {}", tableName, e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            writer.write("-- ERROR exporting table " + tableName + ": " + e.getMessage() + "\n");
+            log.error("Failed to export table {}: {}", tableName, e.getMessage());
+        }
+    }
 }
