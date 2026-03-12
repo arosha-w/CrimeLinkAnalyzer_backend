@@ -2,6 +2,7 @@ package com.crimeLink.analyzer.service;
 
 import com.crimeLink.analyzer.entity.Criminal;
 import com.crimeLink.analyzer.repository.CriminalRepository;
+import com.crimeLink.analyzer.util.LogSanitizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -51,7 +52,7 @@ public class CriminalService {
             try {
                 c.setDateOfBirth(LocalDate.parse(dateOfBirth));
             } catch (Exception e) {
-                log.warn("Invalid date_of_birth format: {}", dateOfBirth);
+                log.warn("Invalid date_of_birth format: {}", LogSanitizer.sanitize(dateOfBirth));
             }
         }
         if (gender != null) c.setGender(gender);
@@ -64,13 +65,13 @@ public class CriminalService {
                 photoUrl = supabaseStorageService.uploadPhoto(criminalId, photo);
                 c.setPrimaryPhotoUrl(photoUrl);
             } catch (Exception e) {
-                log.error("Photo upload failed for criminal {}: {}", criminalId, e.getMessage());
+                log.error("Photo upload failed for criminal {}: {}", LogSanitizer.sanitize(criminalId), LogSanitizer.sanitize(e.getMessage()));
                 // Continue without photo — record still gets created
             }
         }
 
         Criminal saved = criminalRepository.save(c);
-        log.info("Criminal created: {} (name: {})", criminalId, name);
+        log.info("Criminal created: {} (name: {})", LogSanitizer.sanitize(criminalId), LogSanitizer.sanitize(name));
 
         // Generate face embedding via Python ML service (non-blocking)
         boolean hasEmbedding = false;
@@ -78,9 +79,9 @@ public class CriminalService {
             try {
                 facialRecognitionService.generateEmbedding(criminalId, photo);
                 hasEmbedding = true;
-                log.info("Face embedding generated for criminal {}", criminalId);
+                log.info("Face embedding generated for criminal {}", LogSanitizer.sanitize(criminalId));
             } catch (Exception e) {
-                log.warn("Embedding generation failed for criminal {} (non-fatal): {}", criminalId, e.getMessage());
+                log.warn("Embedding generation failed for criminal {} (non-fatal): {}", LogSanitizer.sanitize(criminalId), LogSanitizer.sanitize(e.getMessage()));
             }
         }
 
@@ -147,7 +148,7 @@ public class CriminalService {
             try {
                 c.setDateOfBirth(LocalDate.parse(dateOfBirth));
             } catch (Exception e) {
-                log.warn("Invalid date_of_birth format: {}", dateOfBirth);
+                log.warn("Invalid date_of_birth format: {}", LogSanitizer.sanitize(dateOfBirth));
             }
         }
         if (gender != null) c.setGender(gender);
@@ -159,22 +160,22 @@ public class CriminalService {
             try {
                 String newPhotoUrl = supabaseStorageService.uploadPhoto(criminalId, photo);
                 c.setPrimaryPhotoUrl(newPhotoUrl);
-                log.info("Photo updated for criminal {}", criminalId);
+                log.info("Photo updated for criminal {}", LogSanitizer.sanitize(criminalId));
             } catch (Exception e) {
-                log.error("Photo upload failed for criminal {}: {}", criminalId, e.getMessage());
+                log.error("Photo upload failed for criminal {}: {}", LogSanitizer.sanitize(criminalId), LogSanitizer.sanitize(e.getMessage()));
             }
 
             // Regenerate face embedding with new photo
             try {
                 facialRecognitionService.generateEmbedding(criminalId, photo);
-                log.info("Embedding regenerated for criminal {}", criminalId);
+                log.info("Embedding regenerated for criminal {}", LogSanitizer.sanitize(criminalId));
             } catch (Exception e) {
-                log.warn("Embedding regeneration failed for criminal {} (non-fatal): {}", criminalId, e.getMessage());
+                log.warn("Embedding regeneration failed for criminal {} (non-fatal): {}", LogSanitizer.sanitize(criminalId), LogSanitizer.sanitize(e.getMessage()));
             }
         }
 
         Criminal saved = criminalRepository.save(c);
-        log.info("Criminal updated: {}", criminalId);
+        log.info("Criminal updated: {}", LogSanitizer.sanitize(criminalId));
 
         return Optional.of(toDetailMap(saved));
     }
@@ -194,12 +195,12 @@ public class CriminalService {
         try {
             supabaseStorageService.deleteFolder(criminalId);
         } catch (Exception e) {
-            log.warn("Storage cleanup failed for criminal {} (non-fatal): {}", criminalId, e.getMessage());
+            log.warn("Storage cleanup failed for criminal {} (non-fatal): {}", LogSanitizer.sanitize(criminalId), LogSanitizer.sanitize(e.getMessage()));
         }
 
         // DB delete — suspect_photos cascade via ON DELETE CASCADE
         criminalRepository.deleteById(criminalId);
-        log.info("Criminal deleted: {}", criminalId);
+        log.info("Criminal deleted: {}", LogSanitizer.sanitize(criminalId));
         return true;
     }
 
