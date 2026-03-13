@@ -58,7 +58,7 @@ public class SystemSettingsService {
 
             // Ignore unknown keys
             if (!DEFAULTS.containsKey(key)) {
-                log.warn("Ignoring unknown setting key: {}", key);
+                log.warn("Ignoring unknown setting key: {}", sanitizeForLog(key));
                 continue;
             }
 
@@ -89,7 +89,7 @@ public class SystemSettingsService {
             settingRepo.save(setting);
         }
 
-        log.info("System settings updated: {}", incoming.keySet());
+        log.info("System settings updated: {}", sanitizeForLog(incoming.keySet().toString()));
         return getAllSettings();
     }
 
@@ -100,5 +100,13 @@ public class SystemSettingsService {
         return settingRepo.findBySettingKey(key)
                 .map(SystemSetting::getSettingValue)
                 .orElse(DEFAULTS.get(key));
+    }
+
+    /**
+     * Sanitize input for logging by removing CRLF and other control characters.
+     */
+    private String sanitizeForLog(String input) {
+        if (input == null) return "null";
+        return input.replaceAll("[\\r\\n\\t]", "_");
     }
 }
