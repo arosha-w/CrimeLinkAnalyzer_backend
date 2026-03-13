@@ -51,9 +51,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/facial/health").permitAll()  // ML service health check
                         .requestMatchers("/api/call-analysis/health").permitAll()  // ML service health check
                         
-                        // ML Service endpoints - Investigator role only
+                        // ML Service endpoints
                         .requestMatchers("/api/call-analysis/**").hasRole("Investigator")
+                        .requestMatchers("/api/facial/register").hasAnyRole("Investigator", "OIC")
+                        .requestMatchers("/api/facial/criminals").hasAnyRole("Investigator", "OIC")
                         .requestMatchers("/api/facial/**").hasRole("Investigator")
+
+                        // Criminal CRUD (direct DB, no Python)
+                        .requestMatchers("/api/criminals/**").hasAnyRole("Investigator", "OIC")
+                        .requestMatchers("/api/criminals").hasAnyRole("Investigator", "OIC")
                         
                         .requestMatchers("/api/database/**").permitAll()
                         .requestMatchers("/api/test").permitAll()
@@ -79,9 +85,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/weapon/**").hasRole("OIC")
                         .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
 
-                        // Admin/OIC routes (officer data, locations, users)
-                        .requestMatchers("/api/users/field-officers").hasAnyRole("Admin", "OIC", "FieldOfficer", "Investigator")
-                        .requestMatchers("/api/admin/**").hasAnyRole("OIC", "Admin","Investigator")
+                        // Admin/OIC/Investigator routes (officer data, locations, users)
+                        .requestMatchers("/api/users/field-officers").hasAnyRole("Admin", "OIC", "Investigator")
+                        .requestMatchers("/api/admin/officers/*/locations/**").hasAnyRole("Admin", "OIC", "Investigator")
+                        .requestMatchers("/api/admin/**").hasAnyRole("OIC", "Admin")
 
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception

@@ -6,7 +6,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
+
 
 @Entity
 @Table(name = "weapon_issues")
@@ -48,4 +48,24 @@ public class WeaponIssue {
 
     @Enumerated(EnumType.STRING)
     private WeaponStatus status;
+
+
+     // ===== INTEGRATED BULLET TRACKING =====
+    @Column(name = "bullet_type")
+    private String bulletType;
+    
+    @Column(name = "issued_magazines")
+    private Integer issuedMagazines;
+    
+    @Column(name = "returned_magazines")
+    private Integer returnedMagazines;
+    
+    @Column(name = "used_bullets")
+    private Integer usedBullets;
+    
+    @Column(name = "bullet_condition")
+    private String bulletCondition;
+    
+    @Column(name = "bullet_remarks")
+    private String bulletRemarks;
 }

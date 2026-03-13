@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,4 +18,7 @@ public interface CriminalRepository extends JpaRepository<Criminal, String> {
     
     @Query("SELECT c FROM Criminal c WHERE c.contactNumber = :phone OR c.secondaryContact = :phone")
     Optional<Criminal> findByPhoneNumber(@Param("phone") String phone);
+
+    @Query(value = "SELECT id FROM criminals WHERE face_embedding IS NOT NULL", nativeQuery = true)
+    List<String> findIdsWithEmbedding();
 }

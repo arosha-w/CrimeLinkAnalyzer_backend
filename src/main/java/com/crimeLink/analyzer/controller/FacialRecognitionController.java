@@ -98,7 +98,15 @@ public class FacialRecognitionController {
             @RequestParam(value = "criminal_id", required = false) String criminalId,
             @RequestParam("name") String name,
             @RequestParam("nic") String nic,
-            @RequestParam(value = "risk_level", required = false, defaultValue = "medium") String riskLevel) {
+            @RequestParam(value = "risk_level", required = false, defaultValue = "medium") String riskLevel,
+            @RequestParam(value = "crime_history", required = false) String crimeHistory,
+            @RequestParam(value = "address", required = false) String address,
+            @RequestParam(value = "contact_number", required = false) String contactNumber,
+            @RequestParam(value = "secondary_contact", required = false) String secondaryContact,
+            @RequestParam(value = "date_of_birth", required = false) String dateOfBirth,
+            @RequestParam(value = "gender", required = false) String gender,
+            @RequestParam(value = "alias", required = false) String alias,
+            @RequestParam(value = "status", required = false, defaultValue = "active") String status) {
         
         try {
             log.info("Criminal registration requested: {} ({})", LogSanitizer.sanitize(name), LogSanitizer.sanitize(nic));
@@ -122,7 +130,8 @@ public class FacialRecognitionController {
 
             // Forward to ML service
             JsonNode result = facialRecognitionService.registerCriminal(
-                    photo, criminalId, name, nic, riskLevel);
+                    photo, criminalId, name, nic, riskLevel, crimeHistory,
+                    address, contactNumber, secondaryContact, dateOfBirth, gender, alias, status);
             
             return ResponseEntity.ok(result);
 
