@@ -40,7 +40,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-<<<<<<< HEAD
             .csrf(csrf -> csrf.disable())
             // CRITICAL FIX: Enable CORS using the bean configuration
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -96,7 +95,6 @@ public class SecurityConfig {
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-=======
                 .csrf(csrf -> csrf.disable())
                 // CRITICAL FIX: Enable CORS using the bean configuration
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -166,7 +164,6 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
->>>>>>> 6e83919d1833fd060bc9d9871099b940c90958eb
 
         return http.build();
         }
