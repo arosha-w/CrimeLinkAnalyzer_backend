@@ -1,0 +1,10 @@
+# Backend Docker ignores
+target
+.git
+.github
+.env
+.idea
+.vscode
+*.iml
+database
+backups
