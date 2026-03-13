@@ -1,14 +1,19 @@
 package com.crimeLink.analyzer.controller;
 
 import com.crimeLink.analyzer.dto.AuditLogDTO;
+import com.crimeLink.analyzer.entity.BackupMetadata;
 import com.crimeLink.analyzer.entity.LoginAudit;
 import com.crimeLink.analyzer.entity.User;
 import com.crimeLink.analyzer.repository.LoginAuditRepository;
 import com.crimeLink.analyzer.repository.UserRepository;
+import com.crimeLink.analyzer.service.BackupService;
+import com.crimeLink.analyzer.service.SystemSettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +29,12 @@ public class AdminController {
     private final UserRepository userRepo;
     private final LoginAuditRepository auditRepo;
     private final PasswordEncoder passwordEncoder;
+    private final BackupService backupService;
+    private final SystemSettingsService settingsService;
+
+    // ════════════════════════════════════════════════════════════════
+    //  USER MANAGEMENT (Admin + OIC)
+    // ════════════════════════════════════════════════════════════════
 
     /**
      * Get all users or filter by role/status
@@ -124,6 +135,10 @@ public class AdminController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // ════════════════════════════════════════════════════════════════
+    //  AUDIT LOGS (Admin + OIC)
+    // ════════════════════════════════════════════════════════════════
+
     /**
      * Get audit logs
      * GET /api/admin/audit-logs?limit=100&offset=0
@@ -180,23 +195,26 @@ public class AdminController {
         return ResponseEntity.ok(dtoList);
     }
 
+    // ════════════════════════════════════════════════════════════════
+    //  BACKUP & RESTORE (Admin only)
+    // ════════════════════════════════════════════════════════════════
+
     /**
      * Trigger database backup
      * POST /api/admin/backup
      */
     @PostMapping("/backup")
-    public ResponseEntity<?> triggerBackup() {
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<?> triggerBackup(Authentication authentication) {
         try {
-            String timestamp = java.time.LocalDateTime.now()
-                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
-            String filename = "backup_" + timestamp + ".sql";
-
-            // TODO: Implement actual backup logic
-            // For Railway PostgreSQL, use pg_dump or Spring's backup mechanisms
+            String userEmail = authentication.getName();
+            BackupMetadata metadata = backupService.createBackup(userEmail);
 
             return ResponseEntity.ok(Map.of(
                     "message", "Backup created successfully",
-                    "file", filename
+                    "file", metadata.getFilename(),
+                    "sizeBytes", metadata.getSizeBytes(),
+                    "createdAt", metadata.getCreatedAt().toString()
             ));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(
@@ -210,26 +228,85 @@ public class AdminController {
      * POST /api/admin/restore
      */
     @PostMapping("/restore")
-    public ResponseEntity<?> restoreBackup(@RequestBody Map<String, String> request) {
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<?> restoreBackup(
+            @RequestBody Map<String, String> request,
+            Authentication authentication) {
         try {
             String filename = request.get("filename");
-            if (filename == null || filename.isEmpty()) {
+            if (filename == null || filename.isBlank()) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("message", "Filename is required"));
             }
 
-            // TODO: Implement actual restore logic
-            // For Railway PostgreSQL, use psql or Spring's restore mechanisms
+            String userEmail = authentication.getName();
+            backupService.restoreBackup(filename, userEmail);
 
             return ResponseEntity.ok(Map.of(
                     "message", "Database restored successfully from " + filename
             ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("message", e.getMessage())
+            );
         } catch (Exception e) {
             return ResponseEntity.status(500).body(
                     Map.of("message", "Restore failed: " + e.getMessage())
             );
         }
     }
+
+    /**
+     * List all available backups
+     * GET /api/admin/backups
+     */
+    @GetMapping("/backups")
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<List<BackupMetadata>> listBackups() {
+        return ResponseEntity.ok(backupService.listBackups());
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  SYSTEM SETTINGS (Admin only)
+    // ════════════════════════════════════════════════════════════════
+
+    /**
+     * Get all system settings
+     * GET /api/admin/settings
+     */
+    @GetMapping("/settings")
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<Map<String, String>> getSettings() {
+        return ResponseEntity.ok(settingsService.getAllSettings());
+    }
+
+    /**
+     * Update system settings
+     * PUT /api/admin/settings
+     */
+    @PutMapping("/settings")
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<?> updateSettings(@RequestBody Map<String, String> settings) {
+        try {
+            Map<String, String> updated = settingsService.updateSettings(settings);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Settings saved successfully",
+                    "settings", updated
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("message", e.getMessage())
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(
+                    Map.of("message", "Failed to save settings: " + e.getMessage())
+            );
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  SYSTEM HEALTH (public)
+    // ════════════════════════════════════════════════════════════════
 
     /**
      * Get system health
