@@ -31,7 +31,7 @@ public class FacialRecognitionService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${python.facial-recognition.url:http://localhost:5002}")
+    @Value("${python.facial-recognition.url}")
     private String facialRecognitionServiceUrl;
 
     public FacialRecognitionService(RestTemplate restTemplate) {
