@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.security.MessageDigest;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -83,7 +85,22 @@ public class JwtService {
     }
 
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(secretKey);
+        } catch (IllegalArgumentException ex) {
+            // Fallback for non-base64 secrets: derive a stable 32-byte key
+            byte[] raw = secretKey.getBytes(StandardCharsets.UTF_8);
+            if (raw.length < 32) {
+                try {
+                    keyBytes = MessageDigest.getInstance("SHA-256").digest(raw);
+                } catch (Exception e) {
+                    keyBytes = raw;
+                }
+            } else {
+                keyBytes = raw;
+            }
+        }
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
