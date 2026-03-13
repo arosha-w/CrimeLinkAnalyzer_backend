@@ -85,7 +85,7 @@ public class SecurityConfig {
 
                         // OIC-only routes
                         .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
-                        .requestMatchers("/api/weapon/**").hasRole("OIC")
+                        .requestMatchers("/api/weapon/**").permitAll()
                         .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
 
                         // Admin/OIC/Investigator routes (officer data, locations, users)

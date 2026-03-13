@@ -13,4 +13,5 @@ public interface WeaponService {
     List<Weapon> getAllWeapons();
     Weapon getWeaponBySerial(String serialNumber);
     List<WeaponResponseDTO> getAllWeaponsWithDetails();
+    List<Weapon> getWeaponsIssuedToOfficer(Integer officerId);
 }
