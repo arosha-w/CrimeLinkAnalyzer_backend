@@ -37,6 +37,9 @@ public class SecurityConfig {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins:*}")
+    private String corsAllowedOrigins;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -134,15 +137,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Use allowedOriginPatterns for wildcard support with credentials
-        // For production, replace with specific origins
-        configuration.setAllowedOriginPatterns(List.of("*"));
-        // Or use specific origins (recommended for production):
-        // configuration.setAllowedOrigins(Arrays.asList(
-        // "http://localhost:5173",
-        // "http://localhost:3000",
-        // "https://yourdomain.com"
-        // ));
+        // Use env var CORS_ALLOWED_ORIGINS to configure origins
+        // Default: * (all origins) — restrict for production
+        if ("*".equals(corsAllowedOrigins)) {
+            configuration.setAllowedOriginPatterns(List.of("*"));
+        } else {
+            configuration.setAllowedOrigins(
+                Arrays.asList(corsAllowedOrigins.split(","))
+            );
+        }
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
