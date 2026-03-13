@@ -46,8 +46,8 @@ public class BackupService {
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
         String filename = "backup_" + timestamp + ".sql";
 
-        Path backupDir = Paths.get(backupDirectory);
-        Path backupFile = backupDir.resolve(filename);
+        Path backupFile = resolveSafeBackupPath(filename);
+        Path backupDir = backupFile.getParent();
 
         BackupMetadata metadata = new BackupMetadata();
         metadata.setFilename(filename);
@@ -86,12 +86,12 @@ public class BackupService {
             backupRepo.save(metadata);
 
             log.info("Backup created successfully: {} ({} bytes) by {}",
-                    filename, resultFile.length(), userEmail);
+                    sanitizeForLog(filename), resultFile.length(), sanitizeForLog(userEmail));
 
             return metadata;
 
         } catch (Exception e) {
-            log.error("Backup failed: {}", e.getMessage(), e);
+            log.error("Backup failed: {}", sanitizeForLog(e.getMessage()), e);
             metadata.setStatus("FAILED");
             metadata.setSizeBytes(0L);
             backupRepo.save(metadata);
@@ -103,13 +103,7 @@ public class BackupService {
      * Restore database from a backup file by executing its SQL statements.
      */
     public void restoreBackup(String filename, String userEmail) {
-        // Sanitize filename to prevent path traversal
-        if (!SAFE_FILENAME.matcher(filename).matches()) {
-            throw new IllegalArgumentException(
-                    "Invalid filename. Only alphanumeric characters, underscores, hyphens, and .sql extension are allowed.");
-        }
-
-        Path backupFile = Paths.get(backupDirectory).resolve(filename);
+        Path backupFile = resolveSafeBackupPath(filename);
 
         if (!Files.exists(backupFile)) {
             throw new IllegalArgumentException("Backup file not found: " + filename);
@@ -134,15 +128,16 @@ public class BackupService {
                 } catch (Exception stmtEx) {
                     // Log and continue — some statements may fail on duplicates etc.
                     log.warn("Skipping failed statement: {}... Error: {}",
-                            trimmed.substring(0, Math.min(80, trimmed.length())),
-                            stmtEx.getMessage());
+                            sanitizeForLog(trimmed.substring(0, Math.min(80, trimmed.length()))),
+                            sanitizeForLog(stmtEx.getMessage()));
                 }
             }
 
-            log.info("Database restored from {} by {} ({} statements executed)", filename, userEmail, executed);
+            log.info("Database restored from {} by {} ({} statements executed)",
+                    sanitizeForLog(filename), sanitizeForLog(userEmail), executed);
 
         } catch (IOException e) {
-            log.error("Restore failed: {}", e.getMessage(), e);
+            log.error("Restore failed: {}", sanitizeForLog(e.getMessage()), e);
             throw new RuntimeException("Restore failed: " + e.getMessage(), e);
         }
     }
@@ -176,7 +171,7 @@ public class BackupService {
     private void exportTableData(BufferedWriter writer, String tableName) throws IOException {
         // Validate table name to prevent SQL injection (should only contain safe chars)
         if (!tableName.matches("^[a-zA-Z_][a-zA-Z0-9_]*$")) {
-            log.warn("Skipping suspicious table name: {}", tableName);
+            log.warn("Skipping suspicious table name: {}", sanitizeForLog(tableName));
             return;
         }
 
@@ -214,12 +209,40 @@ public class BackupService {
                                 + String.join(", ", values) + ");\n");
                     }
                 } catch (Exception e) {
-                    log.error("Error exporting table {}: {}", tableName, e.getMessage());
+                    log.error("Error exporting table {}: {}", sanitizeForLog(tableName), sanitizeForLog(e.getMessage()));
                 }
             });
         } catch (Exception e) {
             writer.write("-- ERROR exporting table " + tableName + ": " + e.getMessage() + "\n");
-            log.error("Failed to export table {}: {}", tableName, e.getMessage());
+            log.error("Failed to export table {}: {}", sanitizeForLog(tableName), sanitizeForLog(e.getMessage()));
         }
+    }
+
+    /**
+     * Confirms the requested filename is safe, resolves and normalizes the path,
+     * and strictly checks that it falls inside the base backup directory.
+     */
+    private Path resolveSafeBackupPath(String filename) {
+        if (filename == null || !SAFE_FILENAME.matcher(filename).matches()) {
+            throw new IllegalArgumentException(
+                    "Invalid filename. Only alphanumeric characters, underscores, hyphens, and .sql extension are allowed.");
+        }
+
+        Path baseDir = Paths.get(backupDirectory).toAbsolutePath().normalize();
+        Path resolvedPath = baseDir.resolve(filename).normalize();
+
+        if (!resolvedPath.startsWith(baseDir)) {
+            throw new IllegalArgumentException("Path traversal attempt detected.");
+        }
+
+        return resolvedPath;
+    }
+
+    /**
+     * Sanitizes strings for safe logging to prevent log injection.
+     */
+    private String sanitizeForLog(String input) {
+        if (input == null) return "null";
+        return input.replaceAll("[\\r\\n\\t]", "_");
     }
 }
