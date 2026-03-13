@@ -16,6 +16,7 @@ public class UserController {
         this.service = service;
     }
 
+    @GetMapping("/field-officers")
     public List<User> getFieldOfficers() {
         return service.getFieldOfficers();
     }
