@@ -91,13 +91,6 @@ public class SecurityConfig {
                         // Admin/OIC/Investigator routes (officer data, locations, users)
                         .requestMatchers("/api/users/field-officers").hasAnyRole("Admin", "OIC", "Investigator")
                         .requestMatchers("/api/admin/officers/*/locations/**").hasAnyRole("Admin", "OIC", "Investigator")
-
-                        // Admin-only: backup, restore, settings (must come before general /api/admin/**)
-                        .requestMatchers("/api/admin/backup").hasRole("Admin")
-                        .requestMatchers("/api/admin/restore").hasRole("Admin")
-                        .requestMatchers("/api/admin/backups").hasRole("Admin")
-                        .requestMatchers("/api/admin/settings").hasRole("Admin")
-
                         .requestMatchers("/api/admin/**").hasAnyRole("OIC", "Admin")
 
                         .anyRequest().authenticated())
