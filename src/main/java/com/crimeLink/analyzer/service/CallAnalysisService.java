@@ -31,7 +31,7 @@ public class CallAnalysisService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${python.call-analysis.url:http://localhost:5001}")
+    @Value("${python.call-analysis.url}")
     private String callAnalysisServiceUrl;
 
     public CallAnalysisService(RestTemplate restTemplate) {
