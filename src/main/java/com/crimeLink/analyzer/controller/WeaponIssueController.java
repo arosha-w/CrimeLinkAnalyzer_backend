@@ -4,6 +4,8 @@ import com.crimeLink.analyzer.dto.IssueWeaponRequestDTO;
 import com.crimeLink.analyzer.dto.OfficerDTO;
 import com.crimeLink.analyzer.dto.ReturnWeaponRequestDTO;
 import com.crimeLink.analyzer.dto.WeaponAddDTO;
+import com.crimeLink.analyzer.entity.WeaponIssue;
+import com.crimeLink.analyzer.repository.WeaponIssueRepository;
 import com.crimeLink.analyzer.service.WeaponIssueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,7 @@ import java.util.Map;
 public class WeaponIssueController {
 
     private final WeaponIssueService weaponIssueService;
+    private final WeaponIssueRepository weaponIssueRepository;
 
     @PostMapping("/issue")
     public ResponseEntity<?> issueWeapon(@RequestBody IssueWeaponRequestDTO dto) {
@@ -81,6 +84,16 @@ public class WeaponIssueController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Failed to fetch officers"));
         }
+    }
+
+    @GetMapping("/issued/{officerId}")
+    public List<WeaponIssue> getActiveWeapons(@PathVariable Integer officerId) {
+        return weaponIssueRepository.findByIssuedTo_UserIdAndReturnedAtIsNullOrderByIssuedAtDesc(officerId);
+    }
+
+    @GetMapping("/history/{officerId}")
+    public List<WeaponIssue> getWeaponIssueHistory(@PathVariable Integer officerId) {
+        return weaponIssueRepository.findByIssuedTo_UserIdOrderByIssuedAtDesc(officerId);
     }
 
     private Map<String, String> createErrorResponse(String message) {

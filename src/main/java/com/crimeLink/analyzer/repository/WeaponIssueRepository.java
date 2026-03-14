@@ -10,5 +10,11 @@ import java.util.Optional;
 @Repository
 public interface WeaponIssueRepository extends JpaRepository<WeaponIssue, Integer> {
     List<WeaponIssue> findByWeapon_SerialNumberAndReturnedAtIsNullOrderByIssuedAtDesc(String serialNumber);
+
     Optional<WeaponIssue> findByWeapon_SerialNumberAndReturnedAtIsNull(String serialNumber);
+
+    List<WeaponIssue> findByIssuedTo_UserIdOrderByIssuedAtDesc(Integer officerId);
+
+    List<WeaponIssue> findByIssuedTo_UserIdAndReturnedAtIsNullOrderByIssuedAtDesc(Integer officerId);
+
 }

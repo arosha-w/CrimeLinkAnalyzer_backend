@@ -79,7 +79,8 @@ public class WeaponServiceImpl implements WeaponService {
                     // If weapon is issued, get issue details
                     if (weapon.getStatus() == WeaponStatus.ISSUED) {
                         List<WeaponIssue> issues = weaponIssueRepository
-                                .findByWeapon_SerialNumberAndReturnedAtIsNullOrderByIssuedAtDesc(weapon.getSerialNumber());
+                                .findByWeapon_SerialNumberAndReturnedAtIsNullOrderByIssuedAtDesc(
+                                        weapon.getSerialNumber());
 
                         if (!issues.isEmpty()) {
                             WeaponIssue issue = issues.get(0); // Get the most recent issue
@@ -128,5 +129,10 @@ public class WeaponServiceImpl implements WeaponService {
                     return dto;
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Weapon> getWeaponsIssuedToOfficer(Integer officerId) {
+        return weaponRepository.findActiveWeaponsByOfficer(officerId);
     }
 }
