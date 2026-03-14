@@ -37,64 +37,74 @@ public class SecurityConfig {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins:*}")
+    private String corsAllowedOrigins;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            // CRITICAL FIX: Enable CORS using the bean configuration
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/health").permitAll()
-                .requestMatchers("/api/admin/health").permitAll()
-                .requestMatchers("/api/facial/health").permitAll()  // ML service health check
-                .requestMatchers("/api/call-analysis/health").permitAll()  // ML service health check
-                // ML Service endpoints
-                .requestMatchers("/api/call-analysis/**").hasRole("Investigator")
-                .requestMatchers("/api/facial/register").hasAnyRole("Investigator", "OIC")
-                .requestMatchers("/api/facial/criminals").hasAnyRole("Investigator", "OIC")
-                .requestMatchers("/api/facial/**").hasRole("Investigator")
-                // Criminal CRUD (direct DB, no Python)
-                .requestMatchers("/api/criminals/**").hasAnyRole("Investigator", "OIC")
-                .requestMatchers("/api/criminals").hasAnyRole("Investigator", "OIC")
-                .requestMatchers("/api/database/**").permitAll()
-                .requestMatchers("/api/test").permitAll()
-                .requestMatchers("/api/debug/**").permitAll() // 🔍 Debug endpoints
-                .requestMatchers("/error").permitAll() // Allow error page without auth
-                // Public endpoints
-                .requestMatchers("/api/vehicles/**").permitAll()
-                .requestMatchers("/api/mobile/auth/**").permitAll()
-                .requestMatchers("/api/duties/**").permitAll()
-                .requestMatchers("/api/crime-reports/map").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/crime-reports").permitAll()
-                .requestMatchers("/api/crime-reports/upload-evidence").authenticated()
-                .requestMatchers("/api/crime-reports/**").hasAnyRole("OIC", "Admin")
-                // Field Officer routes
-                .requestMatchers("/api/officers/me/**").hasRole("FieldOfficer")
-                .requestMatchers("/api/mobile/**").hasRole("FieldOfficer")
-                .requestMatchers("/api/leaves/**").permitAll()
-                // OIC-only routes
-                .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
-                .requestMatchers("/api/weapon/**").hasRole("OIC")
-                .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
-                // Admin/OIC/Investigator routes (officer data, locations, users)
-                .requestMatchers("/api/users/field-officers").hasAnyRole("Admin", "OIC", "Investigator")
-                .requestMatchers("/api/admin/officers/*/locations/**").hasAnyRole("Admin", "OIC", "Investigator")
-                .requestMatchers("/api/admin/**").hasAnyRole("OIC", "Admin")
-                .anyRequest().authenticated())
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-                .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    response.setStatus(HttpStatus.FORBIDDEN.value());
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"message\":\"Access denied\"}");
-                }))
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(csrf -> csrf.disable())
+                // CRITICAL FIX: Enable CORS using the bean configuration
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/health").permitAll()
+                        .requestMatchers("/api/admin/health").permitAll()
+                        .requestMatchers("/api/facial/health").permitAll()  // ML service health check
+                        .requestMatchers("/api/call-analysis/health").permitAll()  // ML service health check
+                        
+                        // ML Service endpoints
+                        .requestMatchers("/api/call-analysis/**").hasRole("Investigator")
+                        .requestMatchers("/api/facial/register").hasAnyRole("Investigator", "OIC")
+                        .requestMatchers("/api/facial/criminals").hasAnyRole("Investigator", "OIC")
+                        .requestMatchers("/api/facial/**").hasRole("Investigator")
+
+                        // Criminal CRUD (direct DB, no Python)
+                        .requestMatchers("/api/criminals/**").hasAnyRole("Investigator", "OIC")
+                        .requestMatchers("/api/criminals").hasAnyRole("Investigator", "OIC")
+                        
+                        .requestMatchers("/api/database/**").permitAll()
+                        .requestMatchers("/api/test").permitAll()
+                        .requestMatchers("/api/debug/**").permitAll() // 🔍 Debug endpoints
+                        .requestMatchers("/error").permitAll() // Allow error page without auth
+
+                        // Public endpoints
+                        .requestMatchers("/api/vehicle**").permitAll()
+                        .requestMatchers("/api/mobile/auth/**").permitAll()
+                        .requestMatchers("/api/duties/**").permitAll()
+                        .requestMatchers("/api/crime-reports/map").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/crime-reports").permitAll()
+                        .requestMatchers("/api/crime-reports/upload-evidence").authenticated()
+                        .requestMatchers("/api/crime-reports/**").hasAnyRole("OIC", "Admin")
+
+                        // Field Officer routes
+                        .requestMatchers("/api/officers/me/**").hasRole("FieldOfficer")
+                        .requestMatchers("/api/mobile/**").hasRole("FieldOfficer")
+                        .requestMatchers("/api/leaves/**").permitAll()
+
+                        // OIC-only routes
+                        .requestMatchers("/api/duty-schedules/**").hasRole("OIC")
+                        .requestMatchers("/api/weapon/**").permitAll()
+                        .requestMatchers("/api/weapon-issue/**").hasRole("OIC")
+
+                        // Admin/OIC/Investigator routes (officer data, locations, users)
+                        .requestMatchers("/api/users/field-officers").hasAnyRole("Admin", "OIC", "Investigator")
+                        .requestMatchers("/api/admin/officers/*/locations/**").hasAnyRole("Admin", "OIC", "Investigator")
+                        .requestMatchers("/api/admin/**").hasAnyRole("OIC", "Admin")
+
+                        .anyRequest().authenticated())
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"message\":\"Access denied\"}");
+                        }))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
         }
@@ -120,15 +130,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Use allowedOriginPatterns for wildcard support with credentials
-        // For production, replace with specific origins
-        configuration.setAllowedOriginPatterns(List.of("*"));
-        // Or use specific origins (recommended for production):
-        // configuration.setAllowedOrigins(Arrays.asList(
-        // "http://localhost:5173",
-        // "http://localhost:3000",
-        // "https://yourdomain.com"
-        // ));
+        // Use env var CORS_ALLOWED_ORIGINS to configure origins
+        // Default: * (all origins) — restrict for production
+        if ("*".equals(corsAllowedOrigins)) {
+            configuration.setAllowedOriginPatterns(List.of("*"));
+        } else {
+            configuration.setAllowedOrigins(
+                Arrays.asList(corsAllowedOrigins.split(","))
+            );
+        }
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));

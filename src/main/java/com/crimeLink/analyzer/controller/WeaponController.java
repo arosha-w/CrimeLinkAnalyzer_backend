@@ -69,7 +69,7 @@ public class WeaponController {
             List<WeaponResponseDTO> weapons = weaponService.getAllWeaponsWithDetails();
             return ResponseEntity.ok(weapons);
         } catch (Exception e) {
-            e.printStackTrace();  // Log the full stack trace
+            e.printStackTrace(); // Log the full stack trace
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Failed to fetch weapons with details: " + e.getMessage()));
         }
@@ -87,6 +87,11 @@ public class WeaponController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Failed to fetch weapon"));
         }
+    }
+
+    @GetMapping("/officer/{officerId}")
+    public List<Weapon> getWeaponsIssuedToOfficer(@PathVariable Integer officerId) {
+        return weaponService.getWeaponsIssuedToOfficer(officerId);
     }
 
     private Map<String, String> createErrorResponse(String message) {
