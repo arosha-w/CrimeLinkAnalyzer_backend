@@ -47,7 +47,7 @@ class MobileDutyServiceTest {
 
         assertEquals(1, result.size());
         assertEquals("Officer A", result.get(0).getOfficerName());
-        assertEquals("Active".toUpperCase(), result.get(0).getStatus());
+        assertEquals(DutyStatus.Active.name(), result.get(0).getStatus());
     }
 
     @Test

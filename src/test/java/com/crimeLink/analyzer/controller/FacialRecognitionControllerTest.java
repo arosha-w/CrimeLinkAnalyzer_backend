@@ -78,7 +78,7 @@ class FacialRecognitionControllerTest {
         MockMultipartFile image = new MockMultipartFile("image", "a.jpg", "image/jpeg", "abc".getBytes());
         ObjectNode result = mapper.createObjectNode().put("match", "ok");
 
-        when(facialRecognitionService.analyzeImage(any(), eq(45.0f), eq("user-1"), isNull()))
+        when(facialRecognitionService.analyzeImage(any(), eq(45.0f), eq("unknown"), isNull()))
                 .thenReturn(result);
 
         mockMvc.perform(multipart("/api/facial/analyze").file(image))

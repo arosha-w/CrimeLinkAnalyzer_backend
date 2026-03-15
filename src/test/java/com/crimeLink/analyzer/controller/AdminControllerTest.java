@@ -186,8 +186,6 @@ class AdminControllerTest {
 
     @Test
     void restoreBackup_shouldReturn400_whenFilenameMissing() {
-        when(authentication.getName()).thenReturn("admin@test.com");
-
         ResponseEntity<?> response = controller.restoreBackup(Map.of(), authentication);
 
         assertEquals(400, response.getStatusCode().value());

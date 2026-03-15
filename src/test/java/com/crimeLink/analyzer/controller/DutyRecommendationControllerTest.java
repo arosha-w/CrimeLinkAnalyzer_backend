@@ -55,6 +55,6 @@ class DutyRecommendationControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].officerId").value(1))
-                .andExpect(jsonPath("$[0].officerName").value("Officer A"));
+                .andExpect(jsonPath("$[0].name").value("Officer A"));
     }
 }
