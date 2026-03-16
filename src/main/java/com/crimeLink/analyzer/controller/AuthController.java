@@ -84,7 +84,7 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal User user) {
-        if (user == null) {
+        if (user == null || user.getUserId() == null) {
             return ResponseEntity.status(401).body(Map.of("message", "Not authenticated"));
         }
 
