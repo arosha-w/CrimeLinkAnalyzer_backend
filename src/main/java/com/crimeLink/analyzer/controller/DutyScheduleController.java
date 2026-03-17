@@ -86,4 +86,17 @@ public class DutyScheduleController {
 
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
+
+    // 5) Bulk create / update duties
+    @PostMapping("/bulk")
+    public ResponseEntity<?> createDutiesBulk(@RequestBody List<DutyScheduleRequest> requests) {
+        try {
+            List<DutySchedule> saved = dutyService.createDuties(requests);
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save duties");
+        }
+    }
 }
