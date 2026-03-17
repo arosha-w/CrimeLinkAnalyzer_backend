@@ -129,4 +129,38 @@ class DutyScheduleControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_PDF));
     }
+
+    @Test
+    void createDutiesBulk_shouldReturn201() throws Exception {
+        DutySchedule duty = new DutySchedule();
+        duty.setId(1L);
+
+        when(dutyService.createDuties(any())).thenReturn(List.of(duty));
+
+        DutyScheduleRequest request = new DutyScheduleRequest();
+        request.setOfficerId(1);
+        request.setDate(LocalDate.of(2026, 3, 13));
+        request.setStatus(DutyStatus.Active);
+        request.setTimeRange("06:00-21:00");
+        request.setLocation("Matara");
+
+        mockMvc.perform(post("/api/duty-schedules/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(request))))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void createDutiesBulk_shouldReturn400_whenValidationError() throws Exception {
+        when(dutyService.createDuties(any()))
+                .thenThrow(new IllegalArgumentException("OfficerId is required"));
+
+        DutyScheduleRequest request = new DutyScheduleRequest();
+
+        mockMvc.perform(post("/api/duty-schedules/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(request))))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("OfficerId is required"));
+    }
 }

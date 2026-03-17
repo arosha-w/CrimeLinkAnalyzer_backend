@@ -174,10 +174,12 @@ public class DutyScheduleService {
     }
 
     // Bulk create/update duties
-    public void createDuties(List<DutyScheduleRequest> requests) {
+    public List<DutySchedule> createDuties(List<DutyScheduleRequest> requests) {
+        List<DutySchedule> results = new ArrayList<>();
         for (DutyScheduleRequest req : requests) {
-            createDuty(req);
+            results.add(createDuty(req));
         }
+        return results;
     }
     // Update only the status of an existing duty
     @Transactional
