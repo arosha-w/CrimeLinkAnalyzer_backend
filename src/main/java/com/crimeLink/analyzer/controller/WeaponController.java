@@ -6,9 +6,11 @@ import com.crimeLink.analyzer.dto.WeaponUpdateDTO;
 import com.crimeLink.analyzer.entity.Weapon;
 import com.crimeLink.analyzer.service.WeaponService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -92,6 +94,25 @@ public class WeaponController {
     @GetMapping("/officer/{officerId}")
     public List<Weapon> getWeaponsIssuedToOfficer(@PathVariable Integer officerId) {
         return weaponService.getWeaponsIssuedToOfficer(officerId);
+    }
+
+    @PostMapping(value = "/{serialNumber}/upload-photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadWeaponPhoto(
+            @PathVariable String serialNumber,
+            @RequestParam("photo") MultipartFile photo) {
+        try {
+            String imageUrl = weaponService.uploadWeaponPhoto(serialNumber, photo);
+            Map<String, Object> response = new HashMap<>();
+            response.put("serialNumber", serialNumber);
+            response.put("imageUrl", imageUrl);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(createErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Failed to upload weapon photo"));
+        }
     }
 
     private Map<String, String> createErrorResponse(String message) {
