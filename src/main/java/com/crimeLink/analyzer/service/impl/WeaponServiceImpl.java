@@ -9,10 +9,12 @@ import com.crimeLink.analyzer.entity.WeaponIssue;
 import com.crimeLink.analyzer.enums.WeaponStatus;
 import com.crimeLink.analyzer.repository.WeaponIssueRepository;
 import com.crimeLink.analyzer.repository.WeaponRepository;
+import com.crimeLink.analyzer.service.SupabaseStorageService;
 import com.crimeLink.analyzer.service.WeaponService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +25,7 @@ public class WeaponServiceImpl implements WeaponService {
 
     private final WeaponRepository weaponRepository;
     private final WeaponIssueRepository weaponIssueRepository;
+    private final SupabaseStorageService supabaseStorageService;
 
     @Override
     @Transactional
@@ -36,6 +39,7 @@ public class WeaponServiceImpl implements WeaponService {
         weapon.setWeaponType(dto.getWeaponType());
         weapon.setRemarks(dto.getRemarks());
         weapon.setStatus(WeaponStatus.AVAILABLE);
+        weapon.setImageUrl(dto.getImageUrl());
 
         return weaponRepository.save(weapon);
     }
@@ -49,6 +53,9 @@ public class WeaponServiceImpl implements WeaponService {
         weapon.setWeaponType(dto.getWeaponType());
         weapon.setRemarks(dto.getRemarks());
         weapon.setStatus(dto.getStatus());
+        if (dto.getImageUrl() != null) {
+            weapon.setImageUrl(dto.getImageUrl());
+        }
 
         return weaponRepository.save(weapon);
     }
@@ -75,6 +82,7 @@ public class WeaponServiceImpl implements WeaponService {
                     dto.setWeaponType(weapon.getWeaponType());
                     dto.setStatus(weapon.getStatus().toString());
                     dto.setRemarks(weapon.getRemarks());
+                    dto.setImageUrl(weapon.getImageUrl());
 
                     // If weapon is issued, get issue details
                     if (weapon.getStatus() == WeaponStatus.ISSUED) {
@@ -134,5 +142,22 @@ public class WeaponServiceImpl implements WeaponService {
     @Override
     public List<Weapon> getWeaponsIssuedToOfficer(Integer officerId) {
         return weaponRepository.findActiveWeaponsByOfficer(officerId);
+    }
+
+    @Override
+    @Transactional
+    public String uploadWeaponPhoto(String serialNumber, MultipartFile photo) {
+        Weapon weapon = weaponRepository.findById(serialNumber)
+                .orElseThrow(() -> new RuntimeException("Weapon not found with serial number: " + serialNumber));
+
+        if (photo == null || photo.isEmpty()) {
+            throw new RuntimeException("Photo file is required");
+        }
+
+        String imageUrl = supabaseStorageService.uploadWeaponPhoto(serialNumber, photo);
+        weapon.setImageUrl(imageUrl);
+        weaponRepository.save(weapon);
+
+        return imageUrl;
     }
 }

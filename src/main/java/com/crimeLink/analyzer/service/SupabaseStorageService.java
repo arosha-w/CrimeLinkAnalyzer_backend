@@ -31,6 +31,9 @@ public class SupabaseStorageService {
     @Value("${supabase.bucket}")
     private String bucket;
 
+    @Value("${supabase.weapon-bucket:weapon-photos}")
+    private String weaponBucket;
+
     private final RestTemplate restTemplate = new RestTemplate();
 
     /**
@@ -41,6 +44,21 @@ public class SupabaseStorageService {
      * @return The public URL of the uploaded photo
      */
     public String uploadPhoto(String criminalId, MultipartFile file) {
+        return uploadPhotoToBucket(bucket, criminalId, file);
+    }
+
+    /**
+     * Upload a weapon photo to the dedicated weapon photos bucket.
+     *
+     * @param serialNumber Weapon serial number (used as folder name)
+     * @param file         The image file to upload
+     * @return The public URL of the uploaded photo
+     */
+    public String uploadWeaponPhoto(String serialNumber, MultipartFile file) {
+        return uploadPhotoToBucket(weaponBucket, serialNumber, file);
+    }
+
+    private String uploadPhotoToBucket(String targetBucket, String folder, MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isBlank()) {
             originalFilename = "photo.jpg";
@@ -48,9 +66,9 @@ public class SupabaseStorageService {
 
         // Sanitize filename
         String safeFilename = originalFilename.replaceAll("[^a-zA-Z0-9._-]", "_");
-        String storagePath = criminalId + "/" + safeFilename;
+        String storagePath = folder + "/" + safeFilename;
 
-        String uploadUrl = supabaseUrl + "/storage/v1/object/" + bucket + "/" + storagePath;
+        String uploadUrl = supabaseUrl + "/storage/v1/object/" + targetBucket + "/" + storagePath;
 
         try {
             byte[] fileBytes = file.getBytes();
@@ -69,7 +87,7 @@ public class SupabaseStorageService {
                     uploadUrl, HttpMethod.POST, request, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                String publicUrl = supabaseUrl + "/storage/v1/object/public/" + bucket + "/" + storagePath;
+                String publicUrl = supabaseUrl + "/storage/v1/object/public/" + targetBucket + "/" + storagePath;
                 log.info("Photo uploaded successfully: {}", LogSanitizer.sanitize(publicUrl));
                 return publicUrl;
             } else {
@@ -77,7 +95,7 @@ public class SupabaseStorageService {
                 throw new RuntimeException("Failed to upload photo to storage. Status: " + response.getStatusCode());
             }
         } catch (Exception e) {
-            log.error("Failed to upload photo for criminal {}: {}", LogSanitizer.sanitize(criminalId), LogSanitizer.sanitize(e.getMessage()));
+            log.error("Failed to upload photo for {}: {}", LogSanitizer.sanitize(folder), LogSanitizer.sanitize(e.getMessage()));
             throw new RuntimeException("Photo upload failed: " + e.getMessage(), e);
         }
     }

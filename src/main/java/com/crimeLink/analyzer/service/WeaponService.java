@@ -4,6 +4,7 @@ import com.crimeLink.analyzer.dto.WeaponAddDTO;
 import com.crimeLink.analyzer.dto.WeaponResponseDTO;
 import com.crimeLink.analyzer.dto.WeaponUpdateDTO;
 import com.crimeLink.analyzer.entity.Weapon;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -14,4 +15,5 @@ public interface WeaponService {
     Weapon getWeaponBySerial(String serialNumber);
     List<WeaponResponseDTO> getAllWeaponsWithDetails();
     List<Weapon> getWeaponsIssuedToOfficer(Integer officerId);
+    String uploadWeaponPhoto(String serialNumber, MultipartFile photo);
 }

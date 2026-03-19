@@ -7,4 +7,5 @@ public class WeaponAddDTO {
     private String serialNumber;
     private String weaponType;
     private String remarks;
+    private String imageUrl;
 }

@@ -12,6 +12,7 @@ public class WeaponResponseDTO {
     private String weaponType;
     private String status;
     private String remarks;
+    private String imageUrl;
 
     // Issue details (if issued)
     private OfficerDTO issuedTo;

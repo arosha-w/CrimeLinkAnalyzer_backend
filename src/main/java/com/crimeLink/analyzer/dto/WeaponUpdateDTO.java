@@ -8,5 +8,6 @@ public class WeaponUpdateDTO {
     private String weaponType;
     private WeaponStatus status;
     private String remarks;
+    private String imageUrl;
 
 }

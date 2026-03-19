@@ -38,6 +38,8 @@ public class Weapon {
 
     private String remarks;
 
+    private String imageUrl;
+
     @PrePersist
     void onCreate() {
         registerDate = LocalDateTime.now();

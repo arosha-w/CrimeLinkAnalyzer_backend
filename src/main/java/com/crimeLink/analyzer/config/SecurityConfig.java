@@ -51,9 +51,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers("/api/admin/health").permitAll()
-                        .requestMatchers("/api/facial/health").permitAll()  // ML service health check
-                        .requestMatchers("/api/call-analysis/health").permitAll()  // ML service health check
-                        
+                        .requestMatchers("/api/facial/health").permitAll() // ML service health check
+                        .requestMatchers("/api/call-analysis/health").permitAll() // ML service health check
+
                         // ML Service endpoints
                         .requestMatchers("/api/call-analysis/**").hasRole("Investigator")
                         .requestMatchers("/api/facial/register").hasAnyRole("Investigator", "OIC")
@@ -63,7 +63,7 @@ public class SecurityConfig {
                         // Criminal CRUD (direct DB, no Python)
                         .requestMatchers("/api/criminals/**").hasAnyRole("Investigator", "OIC")
                         .requestMatchers("/api/criminals").hasAnyRole("Investigator", "OIC")
-                        
+
                         .requestMatchers("/api/database/**").permitAll()
                         .requestMatchers("/api/test").permitAll()
                         .requestMatchers("/api/debug/**").permitAll() // 🔍 Debug endpoints
@@ -90,8 +90,13 @@ public class SecurityConfig {
 
                         // Admin/OIC/Investigator routes (officer data, locations, users)
                         .requestMatchers("/api/users/field-officers").hasAnyRole("Admin", "OIC", "Investigator")
-                        .requestMatchers("/api/admin/officers/*/locations/**").hasAnyRole("Admin", "OIC", "Investigator")
+                        .requestMatchers("/api/admin/officers/*/locations/**")
+                        .hasAnyRole("Admin", "OIC", "Investigator")
                         .requestMatchers("/api/admin/**").hasAnyRole("OIC", "Admin")
+
+                        // Officer announcements
+                        .requestMatchers("/api/announcements").hasAnyRole("OIC", "FieldOfficer")
+                        .requestMatchers("/api/announcements/**").hasRole("OIC")
 
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
@@ -107,7 +112,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-        }
+    }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
@@ -136,8 +141,7 @@ public class SecurityConfig {
             configuration.setAllowedOriginPatterns(List.of("*"));
         } else {
             configuration.setAllowedOrigins(
-                Arrays.asList(corsAllowedOrigins.split(","))
-            );
+                    Arrays.asList(corsAllowedOrigins.split(",")));
         }
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
